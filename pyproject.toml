@@ -3,15 +3,32 @@ name = "fund-raising"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "FrostWillmott",email = "121764288+FrostWillmott@users.noreply.github.com"}
+    {name = "Ivan Tkachenko",email = "i.tkachenko@zohomail.eu"}
 ]
 readme = "README.md"
-requires-python = ">=3.13"
+license = "MIT"
+requires-python = ">=3.12, <=3.13.2"
 dependencies = [
-    "django (>=5.2,<6.0)"
+    "django (>=5.2,<6.0)",
+    "djangorestframework (>=3.16.0,<4.0.0)",
+    "drf-yasg (>=1.21.10,<2.0.0)",
+    "django-filter (>=25.1,<26.0)",
+    "python-dotenv (>=1.1.0,<2.0.0)",
+    "celery (>=5.5.1,<6.0.0)",
+    "redis (>=5.2.1,<6.0.0)",
+    "django-redis (>=5.4.0,<6.0.0)",
+    "psycopg2-binary (>=2.9.10,<3.0.0)",
 ]
 
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.11.6"
+python-dotenv = "^1.1.0"
+faker = "^37.1.0"
+factory-boy = "^3.3.3"
+pytest = "^8.3.5"
+pytest-django = "^4.11.1"

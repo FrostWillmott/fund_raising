@@ -1,0 +1,37 @@
+version: '3.8'
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DATABASE_URL=postgres://user:pass@db:5432/app
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    command: poetry run gunicorn project_name.asgi:application --bind 0.0.0.0:8000
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: app
+
+  redis:
+    image: redis:7
+
+  worker:
+    build: .
+    depends_on:
+      - web
+      - redis
+    command: poetry run celery -A project_name worker --loglevel=info
+
+  beat:
+    build: .
+    depends_on:
+      - web
+      - redis
+    command: poetry run celery -A project_name beat --loglevel=info
