@@ -8,3 +8,7 @@ from rest_framework.viewsets import ModelViewSet
 class CollectViewSet(ModelViewSet):
     queryset = Collect.objects.all()
     serializer_class = CollectSerializer
+
+
+class UserViewSet(UserViewSet):
+    pass
