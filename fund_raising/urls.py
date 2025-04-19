@@ -18,6 +18,24 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+schema_view = get_schema_view(
+   openapi.Info(
+      title="API Документация",
+      default_version='v1',
+      description="Описание API для проекта обмена объявлениями",
+      contact=openapi.Contact(email="i.tkachenko@zohomail.eu"),
+   ),
+    public=True,
+    permission_classes=(permissions.AllowAny,),
+)
+
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("api/", include(router.urls)),
+    path("api-auth/", include("rest_framework.urls")),
+    path(
+        "docs/",
+        schema_view.with_ui("swagger", cache_timeout=0),
+        name="schema-swagger-ui",
+    ),
 ]
