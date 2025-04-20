@@ -1,37 +1,122 @@
-version: '3.8'
+#services:
+#  web:
+#    build: .
+#    command: >
+#      bash -c "python manage.py migrate &&
+#               python manage.py runserver 0.0.0.0:8000"
+#    volumes:
+#      - .:/app
+#    ports:
+#      - "8000:8000"
+#    environment:
+#      - DJANGO_ENV=development
+#      - MYSQL_HOST=mysql
+#      - MYSQL_USER=root
+#      - MYSQL_PASSWORD=password
+#      - MYSQL_DATABASE=fund_raising
+#    depends_on:
+#      - mysql
+#      - redis
+#
+#  worker:
+#    build: .
+#    command: celery -A fund_raising worker --loglevel=info
+#    volumes:
+#      - .:/app
+#    environment:
+#      - DJANGO_ENV=development
+#      - MYSQL_HOST=mysql
+#      - MYSQL_USER=root
+#      - MYSQL_PASSWORD=password
+#      - MYSQL_DATABASE=fund_raising
+#    depends_on:
+#      - web
+#      - redis
+#
+#  beat:
+#    build: .
+#    command: celery -A fund_raising beat --loglevel=info
+#    volumes:
+#      - .:/app
+#    environment:
+#      - DJANGO_ENV=development
+#      - MYSQL_HOST=mysql
+#      - MYSQL_USER=root
+#      - MYSQL_PASSWORD=password
+#      - MYSQL_DATABASE=fund_raising
+#    depends_on:
+#      - web
+#      - redis
+#
+#  mysql:
+#    image: mysql:latest
+#    environment:
+#      - MYSQL_ROOT_PASSWORD=password
+#      - MYSQL_DATABASE=fund_raising
+#    volumes:
+#      - mysql_data:/var/lib/mysql
+#    ports:
+#      - "3306:3306"
+#
+#  redis:
+#    image: redis:latest
+#    ports:
+#      - "6379:6379"
+#
+#volumes:
+#  mysql_data:
+
 services:
   web:
     build: .
+    command: >
+      bash -c "python manage.py migrate &&
+               python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app:rw
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     depends_on:
-      - db
+      - mysql
       - redis
-    environment:
-      - DATABASE_URL=postgres://user:pass@db:5432/app
-      - CELERY_BROKER_URL=redis://redis:6379/0
-    command: poetry run gunicorn project_name.asgi:application --bind 0.0.0.0:8000
-
-  db:
-    image: postgres:15
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: pass
-      POSTGRES_DB: app
-
-  redis:
-    image: redis:7
 
   worker:
     build: .
+    command: celery -A fund_raising worker --loglevel=info
+    volumes:
+      - .:/app
+    env_file:
+      - .env
     depends_on:
       - web
       - redis
-    command: poetry run celery -A project_name worker --loglevel=info
 
   beat:
     build: .
+    command: celery -A fund_raising beat --loglevel=info
+    volumes:
+      - .:/app
+    env_file:
+      - .env
     depends_on:
       - web
       - redis
-    command: poetry run celery -A project_name beat --loglevel=info
+
+  mysql:
+    image: mysql:latest
+    env_file:
+      - .env
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+
+volumes:
+  mysql_data:

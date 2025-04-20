@@ -1,136 +1,66 @@
-import json
 import random
-from pathlib import Path
+from decimal import Decimal
+
+from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from faker import Faker
 
-from users.models import User
 from collects.models import Collect
 from payments.models import Payment
 
+User = get_user_model()
 
 class Command(BaseCommand):
-    help = 'Генерирует тестовые данные или импортирует их из JSON-файла'
+    help = 'Generate mock data for testing'
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            '--data-file',
-            type=str,
-            help='Путь к JSON-файлу с тестовыми данными'
-        )
-        parser.add_argument(
-            '--users-count',
-            type=int,
-            default=50,
-            help='Количество случайных пользователей для генерации'
-        )
-        parser.add_argument(
-            '--collects-count',
-            type=int,
-            default=20,
-            help='Количество случайных сборов для генерации'
-        )
-        parser.add_argument(
-            '--payments-per-collect',
-            type=int,
-            default=5,
-            help='Среднее число платежей на сбор при генерации'
-        )
+        parser.add_argument('--users', type=int, default=50)
+        parser.add_argument('--collects', type=int, default=100)
+        parser.add_argument('--payments', type=int, default=5000)
 
     def handle(self, *args, **options):
-        fake = Faker()
-        data_file = options.get('data_file')
-        users_map = {}
-        collects_map = {}
+        # Create users
+        self.stdout.write('Creating users...')
+        users = []
+        for i in range(options['users']):
+            user = User.objects.create_user(
+                username=f'user{i}',
+                email=f'user{i}@example.com',
+                password='password'
+            )
+            users.append(user)
 
-        if data_file:
-            path = Path(data_file)
-            if not path.exists():
-                self.stderr.write(self.style.ERROR(f'Файл не найден: {data_file}'))
-                return
-            with open(path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            # Импорт пользователей
-            for u in data.get('users', []):
-                user = User.objects.create_user(
-                    username=u['username'],
-                    email=u.get('email', ''),
-                    password=u.get('password', fake.password())
-                )
-                users_map[u['username']] = user
+        self.stdout.write('Creating collects...')
+        collects = []
+        occasions = list(Collect.Occasion.values)
 
-            # Импорт сборов
-            for c in data.get('collects', []):
-                author = users_map.get(c['author'])
-                if not author:
-                    self.stderr.write(self.style.WARNING(f"Автор не найден: {c['author']}"))
-                    continue
-                collect = Collect.objects.create(
-                    author=author,
-                    title=c.get('title', fake.sentence()),
-                    reason=c.get('reason', ''),
-                    description=c.get('description', ''),
-                    target_amount=c.get('target_amount', 0),
-                    cover_image=c.get('cover_image', None),
-                    end_date=c.get('end_date', timezone.now())
-                )
-                collects_map[c.get('title')] = collect
+        for i in range(options['collects']):
+            author = random.choice(users)
+            goal = None if random.random() > 0.7 else Decimal(random.randint(1000, 100000))
 
-            # Импорт платежей
-            for p in data.get('payments', []):
-                collect = collects_map.get(p['collect'])
-                user = users_map.get(p['user'])
-                if not collect or not user:
-                    self.stderr.write(self.style.WARNING(
-                        f"Пропущен платеж: collect={p.get('collect')} или user={p.get('user')} не найдены"
-                    ))
-                    continue
-                Payment.objects.create(
-                    collect=collect,
-                    user=user,
-                    amount=p.get('amount', 0),
-                    created_at=p.get('created_at', timezone.now())
-                )
+            collect = Collect.objects.create(
+                title=f'Collect {i}',
+                occasion=random.choice(occasions),
+                description=f'Description for collect {i}',
+                goal_amount=goal,
+                created_by=author,
+                end_date=timezone.now() + timezone.timedelta(days=random.randint(10, 100))
+            )
+            collects.append(collect)
 
-            self.stdout.write(self.style.SUCCESS('Данные импортированы из JSON-файла'))
-        else:
-            # Генерация случайных данных
-            self.stdout.write('Генерация случайных тестовых данных...')
-            # Пользователи
-            users = [
-                User.objects.create_user(
-                    username=fake.user_name(),
-                    email=fake.email(),
-                    password='test1234'
-                ) for _ in range(options['users_count'])
-            ]
-            self.stdout.write(self.style.SUCCESS(f'Создано пользователей: {len(users)}'))
+        # Create payments
+        self.stdout.write('Creating payments...')
+        for i in range(options['payments']):
+            payer = random.choice(users)
+            collect = random.choice(collects)
+            amount = Decimal(random.randint(100, 5000))
 
-            # Сборы
-            for _ in range(options['collects_count']):
-                author = random.choice(users)
-                collect = Collect.objects.create(
-                    author=author,
-                    title=fake.sentence(nb_words=4),
-                    reason=random.choice(['день рождения', 'свадьба', 'благотворительность']),
-                    description=fake.text(max_nb_chars=200),
-                    target_amount=random.randint(1000, 100000),
-                    cover_image=None,
-                    end_date=timezone.now() + fake.time_delta(days=30)
-                )
-                collects_map[collect.id] = collect
+            payment = Payment.objects.create(
+                collect=collect,
+                payer=payer,
+                amount=amount,
+                transaction_id=f'tx-{i}',
+                status=Payment.Status.COMPLETED
+            )
 
-                # Платежи для каждого сбора
-                for __ in range(random.randint(1, options['payments_per_collect'])):
-                    Payment.objects.create(
-                        collect=collect,
-                        user=random.choice(users),
-                        amount=random.randint(10, 1000),
-                        created_at=timezone.now() - fake.time_delta(days=random.randint(0, 30))
-                    )
-            self.stdout.write(self.style.SUCCESS(
-                f'Создано сборов: {len(collects_map)}, с платежами.'
-            ))
-
-        self.stdout.write(self.style.SUCCESS('Команда generate_test_data завершена.'))
+        self.stdout.write(self.style.SUCCESS(f'Successfully created {options["users"]} users, {options["collects"]} collects, and {options["payments"]} payments'))
