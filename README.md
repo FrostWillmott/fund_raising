@@ -85,12 +85,16 @@ python manage.py generate_test_data --users 50 --collects 100 --payments 5000
 - Отправка email-уведомлений через Celery
 - Документация API с помощью Swagger
 
-## Тестирование
+[//]: # (## Тестирование)
 
-Запуск тестов:
-```
-python manage.py test
-```
+[//]: # ()
+[//]: # (Запуск тестов:)
+
+[//]: # (```)
+
+[//]: # (python manage.py test)
+
+[//]: # (```)
 
 ## Производительность
 
