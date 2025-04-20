@@ -1,9 +1,10 @@
-from decimal import Decimal
 
 from django.conf import settings
+from django.core.validators import FileExtensionValidator, MaxValueValidator
 from django.db import models
-from django.db.models import F
 from django.utils import timezone
+
+from collects.validators import validate_file_size
 
 
 class Collect(models.Model):
@@ -49,9 +50,12 @@ class Collect(models.Model):
         null=True, blank=True, verbose_name="Дата окончания"
     )
 
-    # ─────────── сервисные поля ───────────
     cover = models.ImageField(
-        upload_to="collect_covers/",
+        upload_to="collect_covers/%Y/%m/",
+        validators=[
+            FileExtensionValidator(["jpg", "jpeg", "png", "webp"]),
+            validate_file_size,
+        ],
         null=True,
         blank=True,
         verbose_name="Обложка",
