@@ -69,7 +69,7 @@
 ### Генерация тестовых данных
 
 ```
-python manage.py generate_test_data --users 50 --collects 100 --payments 5000
+docker-compose exec web python manage.py generate_test_data --users 50 --collects 100 --payments 5000
 ```
 
 Данная команда создаст:

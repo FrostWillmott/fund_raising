@@ -39,3 +39,16 @@ class PaymentSerializer(serializers.ModelSerializer):
                         field: f"Поле '{field}' нельзя изменить после создания платежа"
                     })
         return data
+
+class PaymentListSerializer(serializers.ModelSerializer):
+    donor_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Payment
+        fields = ("amount", "payment_date", "donor_name")
+
+    def get_donor_name(self, obj):
+        if obj.payer:
+            full_name = f"{obj.payer.first_name} {obj.payer.last_name}".strip()
+            return full_name or obj.payer.username
+        return "Anonymous"

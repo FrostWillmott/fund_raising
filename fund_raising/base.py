@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'api.apps.ApiConfig',
     'payments.apps.PaymentsConfig',
     'collects.apps.CollectsConfig',
+    "django_cleanup.apps.CleanupConfig",
 ]
 
 MIDDLEWARE = [
@@ -103,11 +104,14 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
     ],
 }
 
@@ -127,7 +131,7 @@ CACHES = {
     }
 }
 
-SWAGGER_USE_COMPAT_RENDERERS = False
+# SWAGGER_USE_COMPAT_RENDERERS = False
 
 SWAGGER_SETTINGS = {
     'DOC_EXPANSION': 'none',
