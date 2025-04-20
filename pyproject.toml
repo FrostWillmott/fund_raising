@@ -1,7 +1,7 @@
 [project]
-name = "fund-raising"
+name = "fund_raising"
 version = "0.1.0"
-description = ""
+description = "Fund raising web app"
 authors = [
     {name = "Ivan Tkachenko",email = "i.tkachenko@zohomail.eu"}
 ]
@@ -20,6 +20,10 @@ dependencies = [
     "psycopg2-binary (>=2.9.10,<3.0.0)",
     "djoser (>=2.3.1,<3.0.0)",
     "djangorestframework-simplejwt (>=5.5.0,<6.0.0)",
+    "pillow (>=11.2.1,<12.0.0)",
+    "PyMySQL>=1.1",
+    "django-cors-headers (>=4.7.0,<5.0.0)",
+    "ngrok (>=1.4.0,<2.0.0)"
 ]
 
 
