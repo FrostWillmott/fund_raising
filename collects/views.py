@@ -42,18 +42,6 @@ class CollectViewSet(viewsets.ModelViewSet):
         instance.delete()
         cache.delete_pattern("*collects*")
 
-    # @action(
-    #     methods=["patch"], detail=True, serializer_class=CollectCoverSerializer
-    # )
-    # def update_cover(self, request, *args, **kwargs):
-    #     instance = self.get_object()
-    #     serializer = self.get_serializer(
-    #         instance, data=request.data, partial=True
-    #     )
-    #     serializer.is_valid(raise_exception=True)
-    #     serializer.save()
-    #     return Response(serializer.data)
-
     @method_decorator(cache_page(60 * 5))
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
