@@ -30,7 +30,8 @@ class CollectViewSet(viewsets.ModelViewSet):
                 email=author.email,
             )
 
-        cache.delete_pattern(f"*collects*")
+        cache.delete("collects_list")
+        cache.delete(f"collects_detail_{collect.id}")
 
     @method_decorator(cache_page(60 * 5))
     def list(self, request, *args, **kwargs):
