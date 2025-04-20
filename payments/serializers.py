@@ -32,7 +32,7 @@ class PaymentSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         if self.instance:  # Only in update operations
-            protected_fields = ["amount", "transaction_id"]
+            protected_fields = ["amount", "transaction_id", "collect"]
             for field in protected_fields:
                 if field in data:
                     raise serializers.ValidationError({
