@@ -36,4 +36,12 @@ class CollectSerializer(serializers.ModelSerializer):
         """Цель должна быть > 0 (или None — для бесконечного сбора)."""
         if value is not None and value <= 0:
             raise serializers.ValidationError("goal_amount must be positive")
+        if (
+            self.instance
+            and self.instance.payments.exists()
+            and value != self.instance.goal_amount
+        ):
+            raise serializers.ValidationError(
+                "Нельзя изменить сумму сбора после получения платежей"
+            )
         return value
