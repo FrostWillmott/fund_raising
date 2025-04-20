@@ -9,3 +9,12 @@ venv
 __pycache__
 backup
 node_modules
+.git
+.gitignore
+.venv
+**/__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
