@@ -30,14 +30,14 @@
 
 1. Клонируйте репозиторий:
 ```
-git clone <url-репозитория>
+   git clone <url-репозитория>
    cd fund_raising
 ```
 
 
 2. Создайте файл `.env` со следующими переменными:
 ```
-DJANGO_ENV=development
+   DJANGO_ENV=development
    SECRET_KEY=your-secret-key
    ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
    
@@ -71,6 +71,8 @@ DJANGO_ENV=development
 3. Запустите проект с помощью Docker Compose:
 ```
 docker compose up --build
+```
+
 4. Доступные адреса:
    - Основной API: `http://localhost:8000/api/v1/`
    - Swagger UI: `http://localhost:8000/docs/`
