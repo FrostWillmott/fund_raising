@@ -16,7 +16,6 @@ class Collect(models.Model):
         NEW_YEAR = "new_year", "Новый год"
         OTHER = "other", "Другое"
 
-    # ─────────── базовые реквизиты ───────────
     title = models.CharField(max_length=255, verbose_name="Название")
     occasion = models.CharField(
         max_length=20,
@@ -25,8 +24,6 @@ class Collect(models.Model):
         verbose_name="Повод",
     )
     description = models.TextField(blank=True, verbose_name="Описание")
-
-    # ─────────── деньги ───────────
     goal_amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
@@ -42,7 +39,6 @@ class Collect(models.Model):
         verbose_name="Собрано",
     )
 
-    # ─────────── даты ───────────
     start_date = models.DateTimeField(
         default=timezone.now, verbose_name="Дата начала"
     )
@@ -70,7 +66,6 @@ class Collect(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    # ─────────── вычислимые значения ───────────
     @property
     def donors_count(self) -> int:
         """Уникальное число пользователей, сделавших пожертвования."""
