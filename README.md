@@ -31,14 +31,14 @@
 
 1. Клонируйте репозиторий:
 ```
-git clone <url-репозитория>
+   git clone <url-репозитория>
    cd fund_raising
 ```
 
 
 2. Создайте файл `.env` со следующими переменными:
 ```
-DJANGO_ENV=development
+   DJANGO_ENV=development
    SECRET_KEY=your-secret-key
    ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
    
