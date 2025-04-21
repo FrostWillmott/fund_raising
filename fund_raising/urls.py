@@ -16,20 +16,17 @@ schema_view_api_v1 = get_schema_view(
         description="API Documentation for Fundraising Project",
         contact=openapi.Contact(email="i.tkachenko@zohomail.eu"),
     ),
-    patterns=[
-        path("api/v1/", include((api_v1_urls, "api"), namespace="v1"))
-    ],
     public=True,
     permission_classes=(permissions.IsAuthenticated,) if not settings.DEBUG else (permissions.AllowAny,),
 
 )
 
 if settings.DEBUG:
-    ui_view = schema_view_api_v1.with_ui("swagger", cache_timeout=0)
-    raw_view = schema_view_api_v1.without_ui(cache_timeout=0)
+    cache_timeout = 0
 else:
-    ui_view = schema_view_api_v1.with_ui("swagger", cache_timeout=cache_timeout)
-    raw_view = schema_view_api_v1.without_ui(cache_timeout=cache_timeout)
+    cache_timeout = 3600
+ui_view = schema_view_api_v1.with_ui("swagger", cache_timeout=cache_timeout)
+raw_view = schema_view_api_v1.without_ui(cache_timeout=cache_timeout)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -39,8 +36,8 @@ urlpatterns = [
     path("api-auth/", include("rest_framework.urls")),
 ]
 
-if settings.DEBUG:
-    urlpatterns += [
-        path("api/v1/swagger.<str:format>", raw_view, name="schema-json"),
-        path("api/v1/docs/swagger/",    ui_view,  name="schema-swagger-ui"),
-    ]
+
+urlpatterns += [
+    path("swagger.<str:format>/", raw_view, name="schema-json"),
+    path("docs/",    ui_view,  name="schema-swagger-ui"),
+]

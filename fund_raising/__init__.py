@@ -1,8 +1,6 @@
-import os
+import pymysql
 
-env = os.getenv('DJANGO_ENV', 'development').lower()
+from .celery import app as celery_app
 
-if env == 'production':
-    from .production import *  # noqa
-else:
-    from .development import *  # noqa
+__all__ = ("celery_app",)
+pymysql.install_as_MySQLdb()
