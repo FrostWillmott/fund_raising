@@ -17,7 +17,9 @@ def process_cover_image(instance):
         img.thumbnail((1200, 800), Image.LANCZOS)
 
     # Save optimized version
-    buffer = BytesIO()
+    # Convert image to RGB if it has an alpha channel
+    if img.mode in ('RGBA', 'LA'):
+        img = img.convert('RGB')
     img.save(buffer, format='JPEG', quality=85, optimize=True)
 
     # Replace original file
