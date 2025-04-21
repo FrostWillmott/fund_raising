@@ -71,7 +71,7 @@ DJANGO_ENV=development
 
 3. Запустите проект с помощью Docker Compose:
 ```
-docker-compose up -d
+docker compose up --build`
 ```
 
 
