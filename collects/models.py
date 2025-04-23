@@ -58,9 +58,10 @@ class Collect(models.Model):
     )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="collects",
         verbose_name="Автор",
+        null=True,
     )
     is_active = models.BooleanField(default=True, verbose_name="Активен")
     created_at = models.DateTimeField(auto_now_add=True)

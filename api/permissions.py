@@ -6,17 +6,14 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
     The model instance must have either a 'created_by' or 'payer' attribute.
     """
 
-    owner_field = 'created_by'  # Default field that identifies the owner
+    owner_field = 'created_by'
 
     def has_object_permission(self, request, view, obj):
-        # Read permissions are allowed to any request
         if request.method in permissions.SAFE_METHODS:
             return True
 
-        # Get the owner based on the specified field
         owner = getattr(obj, self.owner_field, None)
 
-        # Write permissions are only allowed to the owner
         return owner == request.user
 
 
