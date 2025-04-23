@@ -1,4 +1,4 @@
-from .base import *  # noqa
+from fund_raising.base import *  # noqa
 
 DEBUG = True
 

@@ -2,8 +2,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework.routers import DefaultRouter
 
-from collects.views import CollectViewSet
-from payments.views import PaymentViewSet
+from api.v1.collects.views import CollectViewSet
+from api.v1.payments.views import PaymentViewSet
 
 app_name = "v1"
 

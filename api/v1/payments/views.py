@@ -8,7 +8,7 @@ from rest_framework import permissions, viewsets
 from api.permissions import IsPaymentPayerOrReadOnly
 from collects.models import Collect
 from payments.models import Payment
-from payments.serializers import PaymentSerializer
+from api.v1.payments.serializers import PaymentSerializer
 from payments.tasks import send_payment_email
 
 
@@ -16,6 +16,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
     serializer_class = PaymentSerializer
     permission_classes = (permissions.IsAuthenticated, IsPaymentPayerOrReadOnly,)
     lookup_field = "id"
+    http_method_names = "get", "post"
 
     def get_queryset(self):
         return Payment.objects.select_related("collect", "payer")

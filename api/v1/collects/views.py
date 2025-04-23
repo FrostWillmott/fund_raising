@@ -1,13 +1,13 @@
 from django.core.cache import cache
-from django.db import transaction
+from django.db import transaction, models
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
-from rest_framework import permissions, viewsets
+from rest_framework import permissions, viewsets, exceptions
 from rest_framework.parsers import FormParser, MultiPartParser
 
 from api.permissions import IsCollectAuthorOrReadOnly
+from api.v1.collects.serializers import CollectSerializer
 from collects.models import Collect
-from collects.serializers import CollectSerializer
 from collects.tasks import send_donation_email
 
 
@@ -18,11 +18,15 @@ class CollectViewSet(viewsets.ModelViewSet):
     lookup_field = "id"
 
     def get_queryset(self):
-        # donors_count сразу приходит из БД
         return (
-            Collect.objects
-            .select_related("created_by")
+            Collect.objects.select_related("created_by")
             .prefetch_related("payments")
+            .annotate(
+                donations_count=models.Count("payments"),
+                successful_donations_count=models.Count(
+                    "payments", filter=models.Q(payments__status="completed")
+                ),
+            )
         )
 
     @transaction.atomic
@@ -39,6 +43,13 @@ class CollectViewSet(viewsets.ModelViewSet):
         cache.delete_pattern("*collects*")
 
     def perform_destroy(self, instance):
+        if instance.payments.exists():
+            raise exceptions.ValidationError(
+                {
+                    "detail": "Невозможно удалить сбор, в котором уже есть платежи. Сделайте его неактивным вместо удаления."
+                }
+            )
+
         instance.delete()
         cache.delete_pattern("*collects*")
 
