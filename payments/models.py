@@ -14,9 +14,10 @@ class Payment(models.Model):
 
     collect = models.ForeignKey(
         Collect,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="payments",
         verbose_name="Сбор",
+        null=True,
     )
     payer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -41,7 +42,6 @@ class Payment(models.Model):
         creating = self._state.adding
         super().save(*args, **kwargs)
 
-        # если платёж только что создан и помечен как completed → обновляем сбор
         if creating and self.status == self.Status.COMPLETED:
             Collect.objects.filter(pk=self.collect_id).update(
                 collected_amount=F("collected_amount") + self.amount
