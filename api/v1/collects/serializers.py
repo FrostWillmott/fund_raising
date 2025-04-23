@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
+from api.v1.payments.serializers import PaymentListSerializer
 from collects.models import Collect
-from payments.serializers import PaymentListSerializer
 
 
 class CollectSerializer(serializers.ModelSerializer):
@@ -11,6 +11,9 @@ class CollectSerializer(serializers.ModelSerializer):
     cover_url = serializers.SerializerMethodField(read_only=True)
     payments = PaymentListSerializer(many=True, read_only=True)
 
+    donations_count = serializers.IntegerField(read_only=True)
+    successful_donations_count = serializers.IntegerField(read_only=True)
+
     class Meta:
         model = Collect
         read_only_fields = (
@@ -19,8 +22,11 @@ class CollectSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "collected_amount",
+            "donors_count",
             "start_date",
             "payments",
+            "donations_count",
+            "successful_donations_count",
         )
         fields = (
             "id",
@@ -39,6 +45,8 @@ class CollectSerializer(serializers.ModelSerializer):
             "payments",
             "cover",
             "cover_url",
+            "donations_count",
+            "successful_donations_count",
         )
 
     def get_cover_url(self, obj):
