@@ -23,8 +23,6 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
     @transaction.atomic
     def perform_create(self, serializer):
-        # статус Completed выставляется в save() модели или в serializer,
-        # здесь передаём только payer.
         payment = serializer.save(payer=self.request.user)
         payment.status = Payment.Status.COMPLETED
         payment.save(update_fields=["status"])
