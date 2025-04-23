@@ -31,7 +31,7 @@ class PaymentSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, data):
-        if self.instance:  # Only in update operations
+        if self.instance:
             protected_fields = ["amount", "transaction_id", "collect"]
             for field in protected_fields:
                 if field in data:
