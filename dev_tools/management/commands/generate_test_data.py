@@ -184,6 +184,14 @@ class Command(BaseCommand):
             for _ in range(batch_amount):
                 collect = random.choice(all_collects)
                 user = random.choice(all_users)
+                if (
+                    collect is None
+                    or not collect.id
+                    or user is None
+                    or not user.id
+                ):
+                    continue
+
                 status = random.choice(payment_statuses)
                 amount_distribution = [
                     (Decimal('10.00'), Decimal('100.00'), 0.5),
@@ -235,15 +243,20 @@ class Command(BaseCommand):
                 if random.random() > 0.9:
                     metadata["is_anonymous"] = True
 
-                payments_to_create.append(Payment(
-                    collect=collect,
-                    payer=user,
-                    amount=amount,
-                    transaction_id=transaction_id,
-                    status=status,
-                    payment_date=payment_date,
-                    metadata=metadata
-                ))
+                try:
+                    payment = Payment(
+                        collect_id=collect.id,
+                        payer_id=user.id,
+                        amount=amount,
+                        transaction_id=transaction_id,
+                        status=status,
+                        payment_date=payment_date,
+                        metadata=metadata,
+                    )
+                    payments_to_create.append(payment)
+                except Exception as e:
+                    print(f"Error creating payment object: {e}")
+                    continue
 
             Payment.objects.bulk_create(payments_to_create, batch_size=500)
 

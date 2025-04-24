@@ -5,10 +5,11 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from rest_framework import permissions, viewsets
 
+from api.pagination import ResultsSetPagination
 from api.permissions import IsPaymentPayerOrReadOnly
+from api.v1.payments.serializers import PaymentSerializer
 from collects.models import Collect
 from payments.models import Payment
-from api.v1.payments.serializers import PaymentSerializer
 from payments.tasks import send_payment_email
 
 
@@ -17,6 +18,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated, IsPaymentPayerOrReadOnly,)
     lookup_field = "id"
     http_method_names = "get", "post"
+    pagination_class = ResultsSetPagination
 
     def get_queryset(self) -> QuerySet[Payment]:
         return Payment.objects.select_related("collect", "payer")
@@ -35,9 +37,9 @@ class PaymentViewSet(viewsets.ModelViewSet):
                 title=payment.collect.title,
                 email=payment.payer.email,
             )
-        cache.delete_pattern(f"*collect_{payment.collect_id}*")
-        cache.delete_pattern("*collects*")
-
+        cache_key = f"view_collect_{payment.collect_id}"
+        cache.delete(cache_key)
+        cache.delete("view_collect_list")
 
     @method_decorator(cache_page(60*1))
     def list(self, request, *args, **kwargs):
