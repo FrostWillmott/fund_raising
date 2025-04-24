@@ -4,7 +4,7 @@ from django.core.mail import send_mail
 
 @shared_task
 def send_donation_email(amount: str, title: str, email: str) -> None:
-    """Письмо автору о создании сбора (или другое назначение)."""
+    "An email to the author regarding the creation of a collection (or another purpose)."
     send_mail(
         subject="Сбор создан",
         message=f"Вы создали сбор «{title}» с целью {amount} ₽. Удачи!",

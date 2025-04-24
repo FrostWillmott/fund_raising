@@ -1,7 +1,7 @@
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
-from .models import Collect
-from .utils import process_cover_image
+from collects.models import Collect
+from collects.utils import process_cover_image
 
 @receiver(pre_save, sender=Collect)
 def handle_cover_image(sender, instance, **kwargs):

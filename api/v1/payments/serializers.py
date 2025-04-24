@@ -4,12 +4,6 @@ from payments.models import Payment
 
 
 class PaymentSerializer(serializers.ModelSerializer):
-    """Payment serializer with the following constraints:
-    - Fields 'id', 'status', 'transaction_id', 'payment_date' are read-only
-    - Field 'amount' cannot be modified after payment creation
-    - Field 'collect' cannot be changed after payment creation
-    """
-
     transaction_id = serializers.CharField(max_length=255)
 
     class Meta:
@@ -25,12 +19,12 @@ class PaymentSerializer(serializers.ModelSerializer):
             "metadata",
         )
 
-    def validate_transaction_id(self, value):
+    def validate_transaction_id(self, value: str) -> str:
         if self.instance is None and Payment.objects.filter(transaction_id=value).exists():
             raise serializers.ValidationError("transaction_id must be unique")
         return value
 
-    def validate(self, data):
+    def validate(self, data: dict) -> dict:
         if self.instance:
             protected_fields = ["amount", "transaction_id", "collect"]
             for field in protected_fields:
