@@ -1,4 +1,8 @@
+from typing import Any
+
 from rest_framework import permissions
+from rest_framework.request import Request
+from rest_framework.viewsets import ViewSet
 
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
@@ -8,7 +12,7 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
 
     owner_field = 'created_by'
 
-    def has_object_permission(self, request, view, obj):
+    def has_object_permission(self, request: Request, view: ViewSet, obj: Any):
         if request.method in permissions.SAFE_METHODS:
             return True
 

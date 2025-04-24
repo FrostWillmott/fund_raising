@@ -1,6 +1,6 @@
 from django.core.cache import cache
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, QuerySet
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from rest_framework import permissions, viewsets
@@ -18,11 +18,11 @@ class PaymentViewSet(viewsets.ModelViewSet):
     lookup_field = "id"
     http_method_names = "get", "post"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Payment]:
         return Payment.objects.select_related("collect", "payer")
 
     @transaction.atomic
-    def perform_create(self, serializer):
+    def perform_create(self, serializer: PaymentSerializer) -> None:
         payment = serializer.save(payer=self.request.user)
         payment.status = Payment.Status.COMPLETED
         payment.save(update_fields=["status"])
@@ -39,7 +39,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
         cache.delete_pattern("*collects*")
 
 
-    @method_decorator(cache_page(60*1))  # Cache for 1 minutes
+    @method_decorator(cache_page(60*1))
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
