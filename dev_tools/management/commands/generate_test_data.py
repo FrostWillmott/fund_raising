@@ -254,8 +254,8 @@ class Command(BaseCommand):
                         metadata=metadata,
                     )
                     payments_to_create.append(payment)
-                except Exception as e:
-                    print(f"Error creating payment object: {e}")
+                except (ValueError, models.IntegrityError) as e:
+                    logger.error(f"Error creating payment object: {e}", exc_info=True)
                     continue
 
             Payment.objects.bulk_create(payments_to_create, batch_size=500)
