@@ -5,7 +5,6 @@ from collects.models import Collect
 
 
 class Payment(models.Model):
-    """Платёж в пользу конкретного сбора."""
 
     class Status(models.TextChoices):
         PENDING = "pending", "Ожидает"
