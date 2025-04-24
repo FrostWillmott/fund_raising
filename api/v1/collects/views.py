@@ -1,9 +1,14 @@
+from typing import Any
+from urllib.request import Request
+
 from django.core.cache import cache
 from django.db import transaction, models
+from django.db.models import QuerySet
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from rest_framework import permissions, viewsets, exceptions
 from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.response import Response
 
 from api.permissions import IsCollectAuthorOrReadOnly
 from api.v1.collects.serializers import CollectSerializer
@@ -17,7 +22,7 @@ class CollectViewSet(viewsets.ModelViewSet):
     parser_classes = (MultiPartParser, FormParser,)
     lookup_field = "id"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Collect]:
         return (
             Collect.objects.select_related("created_by")
             .prefetch_related("payments")
@@ -30,7 +35,7 @@ class CollectViewSet(viewsets.ModelViewSet):
         )
 
     @transaction.atomic
-    def perform_create(self, serializer):
+    def perform_create(self, serializer) -> None:
         collect = serializer.save(created_by=self.request.user)
         author = collect.created_by
         if author.email:
@@ -42,7 +47,7 @@ class CollectViewSet(viewsets.ModelViewSet):
 
         cache.delete_pattern("*collects*")
 
-    def perform_destroy(self, instance):
+    def perform_destroy(self, instance) -> None:
         if instance.payments.exists():
             raise exceptions.ValidationError(
                 {
@@ -54,9 +59,9 @@ class CollectViewSet(viewsets.ModelViewSet):
         cache.delete_pattern("*collects*")
 
     @method_decorator(cache_page(60 * 5))
-    def list(self, request, *args, **kwargs):
+    def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return super().list(request, *args, **kwargs)
 
     @method_decorator(cache_page(60 * 5))
-    def retrieve(self, request, *args, **kwargs):
+    def retrieve(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return super().retrieve(request, *args, **kwargs)

@@ -1,10 +1,11 @@
 from io import BytesIO
+from typing import Any
 
 from django.core.files.base import ContentFile
 from PIL import Image
 
 
-def process_cover_image(instance):
+def process_cover_image(instance: Any) -> None:
     """Optimize and resize collection cover images."""
     if not instance.cover:
         return
