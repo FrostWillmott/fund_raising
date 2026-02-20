@@ -17,8 +17,9 @@ schema_view_api_v1 = get_schema_view(
         contact=openapi.Contact(email="i.tkachenko@zohomail.eu"),
     ),
     public=True,
-    permission_classes=(permissions.IsAuthenticated,) if not settings.DEBUG else (permissions.AllowAny,),
-
+    permission_classes=(permissions.IsAuthenticated,)
+    if not settings.DEBUG
+    else (permissions.AllowAny,),
 )
 
 if settings.DEBUG:
