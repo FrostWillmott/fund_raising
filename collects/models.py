@@ -1,6 +1,6 @@
 
 from django.conf import settings
-from django.core.validators import FileExtensionValidator, MaxValueValidator
+from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.utils import timezone
 
@@ -8,7 +8,6 @@ from collects.validators import validate_file_size
 
 
 class Collect(models.Model):
-    """Групповой денежный сбор."""
 
     class Occasion(models.TextChoices):
         BIRTHDAY = "birthday", "День рождения"
@@ -69,7 +68,6 @@ class Collect(models.Model):
 
     @property
     def donors_count(self) -> int:
-        """Уникальное число пользователей, сделавших пожертвования."""
         return (
             self.payments.values("payer")
             .distinct()
