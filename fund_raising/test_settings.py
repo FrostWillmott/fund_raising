@@ -12,9 +12,3 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     }
 }
-
-if not hasattr(CACHES, 'delete_pattern'):
-    from django.core.cache import cache
-    cache.delete_pattern = lambda pattern, **kwargs: None
-
-CELERY_TASK_ALWAYS_EAGER = True
