@@ -1,140 +1,118 @@
 # Group Fundraising Service
 
-## Overview
+A production-ready REST API for group fundraising, built as an extended 
+response to a technical assessment from ProninTeam.
 
-A Django-based web service providing a REST API for organizing group fundraising. Users can create collections, make donations, and track the progress of fundraising goals.
+The original task required a basic Django CRUD with three entities, Redis 
+caching, Celery email notifications, Docker, and a management command for 
+seed data. I completed all requirements and went further — adding JWT auth, 
+image processing, layered settings, custom permissions, and a realistic data 
+generator with weighted distributions and Faker localization.
 
-## Tech Stack
+## What's inside
 
-- **Backend**: Django, Django REST Framework
-- **Database**: MySQL
-- **Caching**: Redis
-- **Asynchronous Tasks**: Celery
-- **API Documentation**: Swagger/drf-yasg
-- **Containerization**: Docker, Docker Compose
-- **Authentication**: JWT (djangorestframework-simplejwt)
-- **Email Testing**: MailHog (for development)
+**Core stack:** Django 5.2, Django REST Framework, MySQL, Redis, Celery
 
-## Core Entities
+**Beyond the requirements:**
+- JWT authentication via djoser + simplejwt (not mentioned in the spec)
+- Separate dev/prod settings with environment-specific email, DB, and debug config
+- Cover image processing: auto-resize to 1200×800, JPEG optimization, format 
+  validation, 2MB size limit, auto-cleanup of old files on update
+- Custom permission classes with inheritance (`IsOwnerOrReadOnly` → 
+  `IsCollectAuthorOrReadOnly`, `IsPaymentPayerOrReadOnly`)
+- `transaction.atomic` on payment creation with atomic `collected_amount` 
+  update via `F()` expressions
+- Guard against deleting a collection that already has payments
+- `transaction_id` uniqueness validation with a clear error message
+- DB index on `(collect, status)` for payment queries
+- Pagination with configurable `page_size`
+- Realistic seed data: Faker with `ru_RU` locale, occasion-specific title/
+  description templates, weighted payment amount distribution, batch inserts
+- Poetry for dependency management, mypy + django-stubs for type checking, 
+  ruff for linting
+- MailHog with MongoDB backend for email testing in dev
 
-- **User**: System user
-- **Collect**: A group fundraising event (title, description, goal amount, etc.)
-- **Payment**: A donation made towards a specific collection
+## Quick start
 
-## Installation and Setup
-
-### Prerequisites
-
-- Docker and Docker Compose
-
-### Step-by-Step Guide
-
-1. **Clone the repository:**
-   ```bash
-   git clone <repository-url>
-   cd fund_raising
-   ```
-
-2. **Configure environment variables:**
-   Create a `.env` file in the root directory and add the following:
-   ```env
-   DJANGO_ENV=development
-   SECRET_KEY=your-secret-key
-   ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
-   
-   # MySQL Configuration
-   MYSQL_ROOT_PASSWORD=password
-   MYSQL_DATABASE=fund_raising
-   MYSQL_USER=root
-   MYSQL_PASSWORD=password
-   MYSQL_HOST=mysql
-   
-   # Redis and Celery
-   CELERY_BROKER_URL=redis://redis:6379/0
-   CELERY_RESULT_BACKEND=redis://redis:6379/0
-   REDIS_CACHE_URL=redis://redis:6379/1
-   
-   # Email Configuration for Development (MailHog)
-   DEV_EMAIL_HOST=mailhog
-   DEV_EMAIL_PORT=1025
-   DEV_EMAIL_USE_TLS=False
-   
-   # Email Configuration for Production
-   EMAIL_HOST=smtp.example.com
-   EMAIL_PORT=587
-   EMAIL_HOST_USER=your_email@example.com
-   EMAIL_HOST_PASSWORD=your_email_password
-   EMAIL_USE_TLS=True
-   DEFAULT_FROM_EMAIL=Fund Raising <noreply@example.com>
-   ```
-
-3. **Start the project using Docker Compose:**
-   ```bash
-   docker compose up --build
-   ```
-
-4. **Access points:**
-   - **Main API:** `http://localhost:8000/api/v1/`
-   - **Swagger UI:** `http://localhost:8000/docs/`
-   - **MailHog (Email Interceptor):** `http://localhost:8025/`
-
-## API Endpoints
-
-- `/api/v1/collects/` — Group fundraising operations
-- `/api/v1/payments/` — Payment operations
-- `/api/auth/token/` — Obtain JWT token
-- `/api/auth/token/refresh/` — Refresh JWT token
-- `/docs/` — Interactive Swagger documentation
-
-## Management Commands
-
-### Create Superuser
+Prerequisites: Docker and Docker Compose.
 ```bash
-docker compose exec web python manage.py createsuperuser
+git clone YOUR_GITHUB_URL
+cd fund_raising
+cp .env.example .env
+docker compose up --build
 ```
 
-### Generate Sample Data
+| Service | URL |
+|---|---|
+| API | http://localhost:8000/api/v1/ |
+| Swagger UI | http://localhost:8000/docs/ |
+| MailHog | http://localhost:8025/ |
+
+## API
+
+Authentication: JWT Bearer token.
 ```bash
-docker compose exec web python manage.py generate_test_data --users 50 --collects 100 --payments 5000
-```
-This command generates:
-- 50 users
-- 100 fundraising collections of various types
-- 5,000 payments with realistic amounts and dates
-
-## Key Features
-
-- Creation and management of group fundraising collections
-- Payment system with automated notifications
-- Redis-based caching for optimized performance
-- Asynchronous email delivery via Celery
-- Automated API documentation with Swagger
-
-## API Examples
-
-### Obtain Token
-```bash
-curl -X POST http://localhost:8000/api/auth/token/ \
+# Get token
+curl -X POST http://localhost:8000/auth/jwt/create/ \
   -H "Content-Type: application/json" \
   -d '{"username": "user", "password": "password"}'
 ```
 
-### List Fundraising Collections
-```bash
-curl -X GET http://localhost:8000/api/v1/collects/ \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+Endpoints:
+```
+POST   /auth/users/                  — register
+POST   /auth/jwt/create/             — get token
+POST   /auth/jwt/refresh/            — refresh token
+
+GET    /api/v1/collects/             — list collections
+POST   /api/v1/collects/             — create collection (with cover image)
+GET    /api/v1/collects/{id}/        — collection detail with payment feed
+PATCH  /api/v1/collects/{id}/        — update (owner only)
+DELETE /api/v1/collects/{id}/        — delete (owner only, no payments)
+
+GET    /api/v1/payments/             — list payments
+POST   /api/v1/payments/             — make a donation
 ```
 
-### Create a New Collection
+Full interactive docs at `/docs/`.
+
+## Seed data
 ```bash
-curl -X POST http://localhost:8000/api/v1/collects/ \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Birthday Gift", "description": "Raising money for a gift", "occasion": "birthday", "goal_amount": "5000.00"}'
+docker compose exec web python manage.py generate_test_data \
+  --users 50 --collects 100 --payments 5000
 ```
 
-## Performance Optimization
+Generates realistic Russian-language collections (birthday, wedding, 
+new year, other) with occasion-specific titles and descriptions, and 
+payments with weighted amount distribution (50% small / 30% medium / 
+15% large / 5% whale).
 
-- **Caching**: Implemented Redis caching for GET requests.
-- **Efficiency**: Utilizes bulk operations for handling large datasets.
-- **Scalability**: Offloads email notifications to background tasks via Celery.
+## Project structure
+```
+fund_raising/
+├── api/v1/
+│   ├── collects/     # ViewSet, serializer, cache invalidation
+│   └── payments/     # ViewSet, serializer, atomic updates
+├── collects/         # Model, signals, image utils, tasks
+├── payments/         # Model, tasks
+├── dev_tools/        # generate_test_data management command
+└── fund_raising/     # Settings (base / development / production)
+```
+
+## Development
+```bash
+# Linting
+docker compose exec web ruff check .
+
+# Type checking  
+docker compose exec web mypy .
+
+```
+## Tests
+
+The project includes API tests covering the core scenarios: listing and creating 
+collections, unauthorized access guard, payment creation with atomic 
+`collected_amount` update.
+```bash
+pytest
+```
