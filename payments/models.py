@@ -6,7 +6,6 @@ from collects.models import Collect
 
 
 class Payment(models.Model):
-
     class Status(models.TextChoices):
         PENDING = "pending", "Ожидает"
         COMPLETED = "completed", "Успешен"
@@ -48,7 +47,8 @@ class Payment(models.Model):
             )
 
     def __str__(self):
-        return f"{self.collect.title} — {self.amount}"
+        title = self.collect.title if self.collect else "—"
+        return f"{title} — {self.amount}"
 
     class Meta:
         ordering = ("-payment_date",)

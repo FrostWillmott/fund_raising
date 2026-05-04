@@ -1,4 +1,3 @@
-
 from django.conf import settings
 from django.core.validators import FileExtensionValidator
 from django.db import models
@@ -8,7 +7,6 @@ from collects.validators import validate_file_size
 
 
 class Collect(models.Model):
-
     class Occasion(models.TextChoices):
         BIRTHDAY = "birthday", "День рождения"
         WEDDING = "wedding", "Свадьба"
@@ -65,14 +63,6 @@ class Collect(models.Model):
     is_active = models.BooleanField(default=True, verbose_name="Активен")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-    @property
-    def donors_count(self) -> int:
-        return (
-            self.payments.values("payer")
-            .distinct()
-            .count()
-        )
 
     def __str__(self):
         return self.title

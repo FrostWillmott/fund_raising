@@ -20,7 +20,10 @@ class PaymentSerializer(serializers.ModelSerializer):
         )
 
     def validate_transaction_id(self, value: str) -> str:
-        if self.instance is None and Payment.objects.filter(transaction_id=value).exists():
+        if (
+            self.instance is None
+            and Payment.objects.filter(transaction_id=value).exists()
+        ):
             raise serializers.ValidationError("transaction_id must be unique")
         return value
 
@@ -29,10 +32,13 @@ class PaymentSerializer(serializers.ModelSerializer):
             protected_fields = ["amount", "transaction_id", "collect"]
             for field in protected_fields:
                 if field in data:
-                    raise serializers.ValidationError({
-                        field: f"Поле '{field}' нельзя изменить после создания платежа"
-                    })
+                    raise serializers.ValidationError(
+                        {
+                            field: f"Поле '{field}' нельзя изменить после создания платежа"
+                        }
+                    )
         return data
+
 
 class PaymentListSerializer(serializers.ModelSerializer):
     donor_name = serializers.SerializerMethodField()

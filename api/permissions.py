@@ -10,7 +10,7 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
     The model instance must have either a 'created_by' or 'payer' attribute.
     """
 
-    owner_field = 'created_by'
+    owner_field = "created_by"
 
     def has_object_permission(self, request: Request, view: ViewSet, obj: Any):
         if request.method in permissions.SAFE_METHODS:
@@ -24,10 +24,10 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
 class IsCollectAuthorOrReadOnly(IsOwnerOrReadOnly):
     """Permission for Collect objects."""
 
-    owner_field = 'created_by'
+    owner_field = "created_by"
 
 
 class IsPaymentPayerOrReadOnly(IsOwnerOrReadOnly):
     """Permission for Payment objects."""
 
-    owner_field = 'payer'
+    owner_field = "payer"

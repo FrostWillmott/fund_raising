@@ -1,5 +1,4 @@
 from typing import Any
-from rest_framework.request import Request
 
 from django.core.cache import cache
 from django.db import models, transaction
@@ -8,6 +7,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from rest_framework import exceptions, permissions, viewsets
 from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.request import Request
 from rest_framework.response import Response
 
 from api.pagination import ResultsSetPagination
@@ -19,8 +19,14 @@ from collects.tasks import send_donation_email
 
 class CollectViewSet(viewsets.ModelViewSet):
     serializer_class = CollectSerializer
-    permission_classes = (permissions.IsAuthenticated,  IsCollectAuthorOrReadOnly,)
-    parser_classes = (MultiPartParser, FormParser,)
+    permission_classes = (
+        permissions.IsAuthenticated,
+        IsCollectAuthorOrReadOnly,
+    )
+    parser_classes = (
+        MultiPartParser,
+        FormParser,
+    )
     lookup_field = "id"
     pagination_class = ResultsSetPagination
 
@@ -33,6 +39,7 @@ class CollectViewSet(viewsets.ModelViewSet):
                 successful_donations_count=models.Count(
                     "payments", filter=models.Q(payments__status="completed")
                 ),
+                donors_count=models.Count("payments__payer", distinct=True),
             )
         )
 
@@ -40,19 +47,22 @@ class CollectViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer) -> None:
         collect = serializer.save(created_by=self.request.user)
         author = collect.created_by
-        if author.email:
-            send_donation_email.delay(
-                amount=str(collect.goal_amount),
-                title=collect.title,
-                email=author.email,
+        if author and author.email:
+            transaction.on_commit(
+                lambda: send_donation_email.delay(
+                    amount=str(collect.goal_amount),
+                    title=collect.title,
+                    email=author.email,
+                )
             )
+        transaction.on_commit(lambda: cache.delete_pattern("*collects*"))
 
-        cache.delete_pattern("*collects*")
-
+    @transaction.atomic
     def perform_update(self, serializer) -> None:
         serializer.save()
-        cache.delete_pattern("*collects*")
+        transaction.on_commit(lambda: cache.delete_pattern("*collects*"))
 
+    @transaction.atomic
     def perform_destroy(self, instance) -> None:
         if instance.payments.exists():
             raise exceptions.ValidationError(
@@ -62,12 +72,14 @@ class CollectViewSet(viewsets.ModelViewSet):
             )
 
         instance.delete()
-        cache.delete_pattern("*collects*")
+        transaction.on_commit(lambda: cache.delete_pattern("*collects*"))
 
     @method_decorator(cache_page(60 * 1))
     def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return super().list(request, *args, **kwargs)
 
     @method_decorator(cache_page(60 * 1))
-    def retrieve(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+    def retrieve(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> Response:
         return super().retrieve(request, *args, **kwargs)

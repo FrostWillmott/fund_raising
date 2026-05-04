@@ -1,0 +1,29 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.6
+    hooks:
+      - id: ruff
+        # Enforce actionable rules: errors, unused imports, isort, modernisation, bugbear.
+        # D (pydocstyle) and F403/F405 (star-imports in settings) are legacy baseline
+        # in this repo and would block every commit — keep them as warning-only via
+        # manual `ruff check .`.
+        args: [--fix, --select, "E,F401,F811,I,UP,B,SIM,W", --ignore, "E501"]
+      - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest (pre-push)
+        entry: poetry run pytest -q
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

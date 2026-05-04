@@ -43,5 +43,5 @@ pytest = "^8.3.5"
 pytest-django = "^4.11.1"
 django-extensions = "^4.1"
 ngrok = ">=1.4.0,<2.0.0"
-
-
+pre-commit = "^4.6.0"
+pytest-cov = "^7.1.0"

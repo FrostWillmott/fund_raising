@@ -1,5 +1,3 @@
-from typing import Optional
-
 from rest_framework import serializers
 
 from api.v1.payments.serializers import PaymentListSerializer
@@ -13,6 +11,7 @@ class CollectSerializer(serializers.ModelSerializer):
 
     donations_count = serializers.IntegerField(read_only=True)
     successful_donations_count = serializers.IntegerField(read_only=True)
+    donors_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Collect
@@ -22,7 +21,6 @@ class CollectSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "collected_amount",
-            "donors_count",
             "start_date",
             "payments",
             "donations_count",
@@ -49,7 +47,7 @@ class CollectSerializer(serializers.ModelSerializer):
             "successful_donations_count",
         )
 
-    def get_cover_url(self, obj: Collect) -> Optional[str]:
+    def get_cover_url(self, obj: Collect) -> str | None:
         request = self.context.get("request")
         if obj.cover and request:
             return request.build_absolute_uri(obj.cover.url)

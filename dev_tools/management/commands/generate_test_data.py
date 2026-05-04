@@ -1,5 +1,6 @@
 # dev_tools/management/commands/generate_test_data.py
 
+import logging
 import random
 from datetime import timedelta
 from decimal import Decimal
@@ -14,16 +15,29 @@ from collects.models import Collect
 from payments.models import Payment
 
 User = get_user_model()
-fake = Faker(['ru_RU', 'en_US'])
+fake = Faker(["ru_RU", "en_US"])
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
     help = "Generate test data for the application"
 
     def add_arguments(self, parser):
-        parser.add_argument("--users", type=int, default=10, help="Number of users to create")
-        parser.add_argument("--collects", type=int, default=20, help="Number of collects to create")
-        parser.add_argument("--payments", type=int, default=100, help="Number of payments to create")
+        parser.add_argument(
+            "--users", type=int, default=10, help="Number of users to create"
+        )
+        parser.add_argument(
+            "--collects",
+            type=int,
+            default=20,
+            help="Number of collects to create",
+        )
+        parser.add_argument(
+            "--payments",
+            type=int,
+            default=100,
+            help="Number of payments to create",
+        )
 
     def handle(self, *args, **options):
         num_users = options["users"]
@@ -32,27 +46,33 @@ class Command(BaseCommand):
 
         self.stdout.write(f"Creating {num_users} users...")
         existing_users = list(User.objects.all())
-        num_existing = len(existing_users)
+        num_existing_users = len(existing_users)
 
-        if num_existing < num_users:
+        if num_existing_users < num_users:
             users_to_create = []
-            for i in range(num_existing + 1, num_users + 1):
+            for _ in range(num_existing_users + 1, num_users + 1):
                 profile = fake.profile()
-                username = profile['username']
+                username = profile["username"]
 
-                while User.objects.filter(username=username).exists() or any(u.username == username for u in users_to_create):
+                while User.objects.filter(username=username).exists() or any(
+                    u.username == username for u in users_to_create
+                ):
                     profile = fake.profile()
-                    username = profile['username']
+                    username = profile["username"]
 
-                users_to_create.append(User(
-                    username=username,
-                    email=profile['mail'],
-                    first_name=fake.first_name(),
-                    last_name=fake.last_name(),
-                    is_active=True
-                ))
+                users_to_create.append(
+                    User(
+                        username=username,
+                        email=profile["mail"],
+                        first_name=fake.first_name(),
+                        last_name=fake.last_name(),
+                        is_active=True,
+                    )
+                )
 
-            created_users = User.objects.bulk_create(users_to_create, batch_size=500)
+            created_users = User.objects.bulk_create(
+                users_to_create, batch_size=500
+            )
             for user in created_users:
                 user.set_password("testpassword")
                 user.save()
@@ -63,110 +83,160 @@ class Command(BaseCommand):
 
         self.stdout.write(f"Creating {num_collects} collects...")
         existing_collects = list(Collect.objects.all())
-        num_existing = len(existing_collects)
+        num_existing_collects = len(existing_collects)
 
         occasions = list(Collect.Occasion.values)
 
         occasion_templates = {
-            'birthday': {
-                'titles': [
+            "birthday": {
+                "titles": [
                     "День рождения {name}",
                     "{age}-летие {name}",
                     "Подарок на ДР {name}",
-                    "Собираем на подарок {name}"
+                    "Собираем на подарок {name}",
                 ],
-                'descriptions': [
+                "descriptions": [
                     "Собираем на подарок {name} в честь {age}-летия! Поможем сделать день рождения незабываемым!",
                     "{name} исполняется {age} лет, давайте вместе сделаем подарок",
-                    "День рождения {name} уже скоро! Соберем на незабываемый подарок"
-                ]
+                    "День рождения {name} уже скоро! Соберем на незабываемый подарок",
+                ],
             },
-            'wedding': {
-                'titles': [
+            "wedding": {
+                "titles": [
                     "Свадьба {name1} и {name2}",
                     "На свадебное путешествие {name1} и {name2}",
-                    "Подарок молодоженам {name1} и {name2}"
+                    "Подарок молодоженам {name1} и {name2}",
                 ],
-                'descriptions': [
+                "descriptions": [
                     "Дорогие друзья! {date} состоится свадьба {name1} и {name2}. Вместо цветов и подарков молодожены будут рады вашему вкладу в их совместную жизнь!",
                     "Помогите {name1} и {name2} начать семейную жизнь с незабываемого свадебного путешествия!",
-                    "{name1} и {name2} соединяют свои судьбы {date}. Мы собираем на подарок, который поможет им в их новой жизни."
-                ]
+                    "{name1} и {name2} соединяют свои судьбы {date}. Мы собираем на подарок, который поможет им в их новой жизни.",
+                ],
             },
-            'new_year': {
-                'titles': [
+            "new_year": {
+                "titles": [
                     "Новогодний корпоратив {company}",
                     "Новогодние подарки детям",
-                    "Корпоративный Новый Год {year}"
+                    "Корпоративный Новый Год {year}",
                 ],
-                'descriptions': [
+                "descriptions": [
                     "Собираем на корпоративный новогодний праздник компании {company}. Сделаем этот Новый Год незабываемым!",
                     "Давайте вместе порадуем детей новогодними подарками! Каждый ребенок должен получить праздник.",
-                    "Новый {year} год уже скоро! Соберем деньги на отличный корпоратив для всей команды {company}."
-                ]
+                    "Новый {year} год уже скоро! Соберем деньги на отличный корпоратив для всей команды {company}.",
+                ],
             },
-            'other': {
-                'titles': [
+            "other": {
+                "titles": [
                     "{activity} для команды {team}",
                     "Подарок коллеге {name}",
                     "Благотворительный сбор: {cause}",
-                    "Сбор на {item} для {purpose}"
+                    "Сбор на {item} для {purpose}",
                 ],
-                'descriptions': [
+                "descriptions": [
                     "Мы собираем средства на {activity} для нашей команды {team}. Это отличная возможность для укрепления командного духа!",
                     "Наш коллега {name} {reason}. Давайте вместе поможем и поддержим!",
                     "Благотворительный сбор в поддержку {cause}. Ваша помощь очень важна!",
-                    "Собираем на {item}, который будет использован для {purpose}. Любая помощь ценна!"
-                ]
-            }
+                    "Собираем на {item}, который будет использован для {purpose}. Любая помощь ценна!",
+                ],
+            },
         }
 
-        if num_existing < num_collects:
+        if num_existing_collects < num_collects:
             collects_to_create = []
-            for i in range(num_existing + 1, num_collects + 1):
+            for _ in range(num_existing_collects + 1, num_collects + 1):
                 user = random.choice(all_users)
                 occasion = random.choice(occasions)
-                goal_amount = Decimal(str(random.randint(1000, 100000))) if random.random() > 0.2 else None
-                start_date = timezone.now() - timedelta(days=random.randint(1, 180))
-                end_date = start_date + timedelta(days=random.randint(10, 90)) if random.random() > 0.3 else None
+                goal_amount = (
+                    Decimal(str(random.randint(1000, 100000)))
+                    if random.random() > 0.2
+                    else None
+                )
+                start_date = timezone.now() - timedelta(
+                    days=random.randint(1, 180)
+                )
+                end_date = (
+                    start_date + timedelta(days=random.randint(10, 90))
+                    if random.random() > 0.3
+                    else None
+                )
 
-                templates = occasion_templates.get(occasion, occasion_templates['other'])
+                templates = occasion_templates.get(
+                    occasion, occasion_templates["other"]
+                )
 
                 template_vars = {
-                    'name': fake.first_name(),
-                    'name1': fake.first_name(),
-                    'name2': fake.first_name(),
-                    'age': random.randint(1, 90),
-                    'company': fake.company(),
-                    'team': fake.bs().title(),
-                    'year': timezone.now().year + 1,
-                    'activity': random.choice(['Тимбилдинг', 'Поход', 'Квест', 'Экскурсия', 'Мастер-класс']),
-                    'reason': random.choice(['уходит на пенсию', 'переезжает в другой город', 'стал родителем', 'защитил диссертацию']),
-                    'cause': random.choice(['детского дома', 'приюта для животных', 'больницы', 'школы']),
-                    'item': random.choice(['оборудование', 'мебель', 'компьютер', 'инструменты', 'книги']),
-                    'purpose': random.choice(['обучения', 'лечения', 'развития', 'исследований']),
-                    'date': fake.date_this_year(before_today=False, after_today=True).strftime('%d.%m.%Y')
+                    "name": fake.first_name(),
+                    "name1": fake.first_name(),
+                    "name2": fake.first_name(),
+                    "age": random.randint(1, 90),
+                    "company": fake.company(),
+                    "team": fake.bs().title(),
+                    "year": timezone.now().year + 1,
+                    "activity": random.choice(
+                        [
+                            "Тимбилдинг",
+                            "Поход",
+                            "Квест",
+                            "Экскурсия",
+                            "Мастер-класс",
+                        ]
+                    ),
+                    "reason": random.choice(
+                        [
+                            "уходит на пенсию",
+                            "переезжает в другой город",
+                            "стал родителем",
+                            "защитил диссертацию",
+                        ]
+                    ),
+                    "cause": random.choice(
+                        [
+                            "детского дома",
+                            "приюта для животных",
+                            "больницы",
+                            "школы",
+                        ]
+                    ),
+                    "item": random.choice(
+                        [
+                            "оборудование",
+                            "мебель",
+                            "компьютер",
+                            "инструменты",
+                            "книги",
+                        ]
+                    ),
+                    "purpose": random.choice(
+                        ["обучения", "лечения", "развития", "исследований"]
+                    ),
+                    "date": fake.date_this_year(
+                        before_today=False, after_today=True
+                    ).strftime("%d.%m.%Y"),
                 }
 
-                title_template = random.choice(templates['titles'])
-                description_template = random.choice(templates['descriptions'])
+                title_template = random.choice(templates["titles"])
+                description_template = random.choice(templates["descriptions"])
 
                 title = title_template.format(**template_vars)
                 description = description_template.format(**template_vars)
 
-                collects_to_create.append(Collect(
-                    title=title,
-                    occasion=occasion,
-                    description=description,
-                    goal_amount=goal_amount,
-                    collected_amount=Decimal('0.00'),
-                    start_date=start_date,
-                    end_date=end_date,
-                    created_by=user,
-                    is_active=True
-                ))
+                collects_to_create.append(
+                    Collect(
+                        title=title,
+                        occasion=occasion,
+                        description=description,
+                        goal_amount=goal_amount,
+                        collected_amount=Decimal("0.00"),
+                        start_date=start_date,
+                        end_date=end_date,
+                        created_by=user,
+                        is_active=True,
+                    )
+                )
 
-            created_collects = Collect.objects.bulk_create(collects_to_create, batch_size=500)
+            created_collects = Collect.objects.bulk_create(
+                collects_to_create, batch_size=500
+            )
             all_collects = existing_collects + created_collects
         else:
             all_collects = existing_collects[:num_collects]
@@ -194,15 +264,15 @@ class Command(BaseCommand):
 
                 status = random.choice(payment_statuses)
                 amount_distribution = [
-                    (Decimal('10.00'), Decimal('100.00'), 0.5),
-                    (Decimal('100.00'), Decimal('500.00'), 0.3),
-                    (Decimal('500.00'), Decimal('2000.00'), 0.15),
-                    (Decimal('2000.00'), Decimal('10000.00'), 0.05)
+                    (Decimal("10.00"), Decimal("100.00"), 0.5),
+                    (Decimal("100.00"), Decimal("500.00"), 0.3),
+                    (Decimal("500.00"), Decimal("2000.00"), 0.15),
+                    (Decimal("2000.00"), Decimal("10000.00"), 0.05),
                 ]
 
                 rand = random.random()
                 cumulative = 0
-                min_amount, max_amount = Decimal('10.00'), Decimal('100.00')
+                min_amount, max_amount = Decimal("10.00"), Decimal("100.00")
 
                 for min_val, max_val, probability in amount_distribution:
                     cumulative += probability
@@ -210,15 +280,25 @@ class Command(BaseCommand):
                         min_amount, max_amount = min_val, max_val
                         break
 
-                amount_int_part = random.randint(int(min_amount), int(max_amount))
+                amount_int_part = random.randint(
+                    int(min_amount), int(max_amount)
+                )
                 amount_decimal_part = Decimal(str(random.randint(0, 99) / 100))
                 amount = Decimal(amount_int_part) + amount_decimal_part
 
-                processors = ['stripe', 'paypal', 'yoomoney', 'tinkoff', 'sber']
+                processors = [
+                    "stripe",
+                    "paypal",
+                    "yoomoney",
+                    "tinkoff",
+                    "sber",
+                ]
                 processor = random.choice(processors)
                 transaction_id = f"{processor}_{fake.uuid4()}"
 
-                max_days_ago = min(90, (timezone.now() - collect.start_date).days)
+                max_days_ago = min(
+                    90, (timezone.now() - collect.start_date).days
+                )
                 if max_days_ago > 0:
                     days_ago = random.randint(0, max_days_ago)
                 else:
@@ -227,7 +307,7 @@ class Command(BaseCommand):
                 payment_date = timezone.now() - timedelta(
                     days=days_ago,
                     hours=random.randint(0, 23),
-                    minutes=random.randint(0, 59)
+                    minutes=random.randint(0, 59),
                 )
 
                 metadata = {
@@ -235,7 +315,7 @@ class Command(BaseCommand):
                     "payment_processor": processor,
                     "ip_address": fake.ipv4(),
                     "user_agent": fake.user_agent(),
-                    "currency": "RUB"
+                    "currency": "RUB",
                 }
 
                 if random.random() > 0.7:
@@ -255,13 +335,19 @@ class Command(BaseCommand):
                     )
                     payments_to_create.append(payment)
                 except (ValueError, models.IntegrityError) as e:
-                    logger.error(f"Error creating payment object: {e}", exc_info=True)
+                    logger.error(
+                        f"Error creating payment object: {e}", exc_info=True
+                    )
                     continue
 
             Payment.objects.bulk_create(payments_to_create, batch_size=500)
 
             if Payment.Status.COMPLETED in payment_statuses:
-                completed_payments = [p for p in payments_to_create if p.status == Payment.Status.COMPLETED]
+                completed_payments = [
+                    p
+                    for p in payments_to_create
+                    if p.status == Payment.Status.COMPLETED
+                ]
 
                 collect_amounts = {}
                 for payment in completed_payments:
@@ -273,12 +359,16 @@ class Command(BaseCommand):
 
                 for collect_id, amount in collect_amounts.items():
                     Collect.objects.filter(id=collect_id).update(
-                        collected_amount=models.F('collected_amount') + amount
+                        collected_amount=models.F("collected_amount") + amount
                     )
 
             payments_created += batch_amount
-            self.stdout.write(f"  Created {payments_created} of {num_payments} payments...")
+            self.stdout.write(
+                f"  Created {payments_created} of {num_payments} payments..."
+            )
 
-        self.stdout.write(self.style.SUCCESS(
-            f"Successfully created {num_users} users, {num_collects} collects, and {num_payments} payments!"
-        ))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Successfully created {num_users} users, {num_collects} collects, and {num_payments} payments!"
+            )
+        )

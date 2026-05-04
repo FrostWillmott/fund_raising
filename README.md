@@ -1,26 +1,22 @@
 # Group Fundraising Service
 
-A production-ready REST API for group fundraising, built as an extended 
-response to a technical assessment from ProninTeam.
-
-The original task required a basic Django CRUD with three entities, Redis 
-caching, Celery email notifications, Docker, and a management command for 
-seed data. I completed all requirements and went further — adding JWT auth, 
-image processing, layered settings, custom permissions, and a realistic data 
-generator with weighted distributions and Faker localization.
+A production-ready REST API for group fundraising with JWT authentication,
+image processing, cache invalidation, and asynchronous email notifications.
+The project focuses on practical backend concerns: transactional safety,
+permissions, query optimization, and maintainable environment-based settings.
 
 ## What's inside
 
 **Core stack:** Django 5.2, Django REST Framework, MySQL, Redis, Celery
 
-**Beyond the requirements:**
+**Features:**
 - JWT authentication via djoser + simplejwt (not mentioned in the spec)
 - Separate dev/prod settings with environment-specific email, DB, and debug config
-- Cover image processing: auto-resize to 1200×800, JPEG optimization, format 
+- Cover image processing: auto-resize to 1200×800, JPEG optimization, format
   validation, 2MB size limit, auto-cleanup of old files on update
-- Custom permission classes with inheritance (`IsOwnerOrReadOnly` → 
+- Custom permission classes with inheritance (`IsOwnerOrReadOnly` →
   `IsCollectAuthorOrReadOnly`, `IsPaymentPayerOrReadOnly`)
-- `transaction.atomic` on payment creation with atomic `collected_amount` 
+- `transaction.atomic` on payment creation with atomic `collected_amount`
   update via `F()` expressions
 - Guard against deleting a collection that already has payments
 - `transaction_id` uniqueness validation with a clear error message
@@ -28,7 +24,7 @@ generator with weighted distributions and Faker localization.
 - Pagination with configurable `page_size`
 - Realistic seed data: Faker with `ru_RU` locale, occasion-specific title/
   description templates, weighted payment amount distribution, batch inserts
-- Poetry for dependency management, mypy + django-stubs for type checking, 
+- Poetry for dependency management, mypy + django-stubs for type checking,
   ruff for linting
 - MailHog with MongoDB backend for email testing in dev
 
@@ -36,7 +32,7 @@ generator with weighted distributions and Faker localization.
 
 Prerequisites: Docker and Docker Compose.
 ```bash
-git clone YOUR_GITHUB_URL
+git clone <your-fork-or-repo-url>
 cd fund_raising
 cp .env.example .env
 docker compose up --build
@@ -82,9 +78,9 @@ docker compose exec web python manage.py generate_test_data \
   --users 50 --collects 100 --payments 5000
 ```
 
-Generates realistic Russian-language collections (birthday, wedding, 
-new year, other) with occasion-specific titles and descriptions, and 
-payments with weighted amount distribution (50% small / 30% medium / 
+Generates realistic Russian-language collections (birthday, wedding,
+new year, other) with occasion-specific titles and descriptions, and
+payments with weighted amount distribution (50% small / 30% medium /
 15% large / 5% whale).
 
 ## Project structure
@@ -101,18 +97,28 @@ fund_raising/
 
 ## Development
 ```bash
+# Install git hooks (once per clone)
+poetry run pre-commit install --hook-type pre-commit --hook-type pre-push
+
 # Linting
 docker compose exec web ruff check .
 
-# Type checking  
+# Type checking
 docker compose exec web mypy .
 
+# Run hooks manually for all files
+poetry run pre-commit run --all-files
 ```
 ## Tests
 
-The project includes API tests covering the core scenarios: listing and creating 
-collections, unauthorized access guard, payment creation with atomic 
-`collected_amount` update.
+API tests cover core scenarios: listing and creating collections, permission
+enforcement, payment creation with atomic `collected_amount` update,
+duplicate `transaction_id` rejection, and delete guards.
+
 ```bash
+# Run with coverage (outputs term-missing summary + htmlcov/)
 pytest
+
+# Quick run without coverage
+pytest --no-cov
 ```
