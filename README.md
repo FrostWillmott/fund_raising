@@ -32,7 +32,7 @@ permissions, query optimization, and maintainable environment-based settings.
 
 Prerequisites: Docker and Docker Compose.
 ```bash
-git clone <your-fork-or-repo-url>
+git clone https://github.com/FrostWillmott/fund_raising.git
 cd fund_raising
 cp .env.example .env
 docker compose up --build
