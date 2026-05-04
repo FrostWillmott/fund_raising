@@ -39,8 +39,8 @@ class PaymentViewSet(viewsets.ModelViewSet):
                     email=payment.payer.email,
                 )
             )
-        transaction.on_commit(lambda: cache.delete_pattern("*collects*"))
-        transaction.on_commit(lambda: cache.delete_pattern("*payments*"))
+        transaction.on_commit(lambda: cache.delete_pattern("*collects*"))  # type: ignore[attr-defined]
+        transaction.on_commit(lambda: cache.delete_pattern("*payments*"))  # type: ignore[attr-defined]
 
     @method_decorator(cache_page(60 * 1))
     def list(self, request, *args, **kwargs):

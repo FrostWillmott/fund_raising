@@ -1,4 +1,4 @@
-FROM python:3.13.2-slim
+FROM python:3.13.13-slim
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
@@ -17,3 +17,7 @@ COPY . /app/
 ENV PYTHONUNBUFFERED=1
 ENV DJANGO_ENV=development
 ENV PYTHONPATH=/app
+
+EXPOSE 8000
+
+CMD ["gunicorn", "fund_raising.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]

@@ -13,7 +13,7 @@ def process_cover_image(instance: Any) -> None:
     img = Image.open(instance.cover)
 
     if img.width > 1200 or img.height > 800:
-        img.thumbnail((1200, 800), Image.LANCZOS)
+        img.thumbnail((1200, 800), Image.Resampling.LANCZOS)
 
     buffer = BytesIO()
     img.save(buffer, format="JPEG", quality=85, optimize=True)

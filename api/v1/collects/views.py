@@ -56,12 +56,12 @@ class CollectViewSet(viewsets.ModelViewSet):
                     email=author.email,
                 )
             )
-        transaction.on_commit(lambda: cache.delete_pattern("*collects*"))
+        transaction.on_commit(lambda: cache.delete_pattern("*collects*"))  # type: ignore[attr-defined]
 
     @transaction.atomic
     def perform_update(self, serializer) -> None:
         serializer.save()
-        transaction.on_commit(lambda: cache.delete_pattern("*collects*"))
+        transaction.on_commit(lambda: cache.delete_pattern("*collects*"))  # type: ignore[attr-defined]
 
     @transaction.atomic
     def perform_destroy(self, instance) -> None:
@@ -73,7 +73,7 @@ class CollectViewSet(viewsets.ModelViewSet):
             )
 
         instance.delete()
-        transaction.on_commit(lambda: cache.delete_pattern("*collects*"))
+        transaction.on_commit(lambda: cache.delete_pattern("*collects*"))  # type: ignore[attr-defined]
 
     @method_decorator(cache_page(60 * 1))
     def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
