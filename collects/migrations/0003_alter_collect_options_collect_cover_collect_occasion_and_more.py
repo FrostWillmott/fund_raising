@@ -7,7 +7,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("collects", "0002_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
@@ -51,7 +50,10 @@ class Migration(migrations.Migration):
             model_name="collect",
             name="collected_amount",
             field=models.DecimalField(
-                decimal_places=2, default=0, max_digits=12, verbose_name="Собрано"
+                decimal_places=2,
+                default=0,
+                max_digits=12,
+                verbose_name="Собрано",
             ),
         ),
         migrations.AlterField(

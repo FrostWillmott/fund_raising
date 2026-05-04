@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = []
@@ -24,10 +23,15 @@ class Migration(migrations.Migration):
                 ),
                 ("title", models.CharField(max_length=255)),
                 ("description", models.TextField(blank=True)),
-                ("goal_amount", models.DecimalField(decimal_places=2, max_digits=12)),
+                (
+                    "goal_amount",
+                    models.DecimalField(decimal_places=2, max_digits=12),
+                ),
                 (
                     "collected_amount",
-                    models.DecimalField(decimal_places=2, default=0, max_digits=12),
+                    models.DecimalField(
+                        decimal_places=2, default=0, max_digits=12
+                    ),
                 ),
                 ("start_date", models.DateTimeField()),
                 ("end_date", models.DateTimeField(blank=True, null=True)),

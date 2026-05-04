@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -25,8 +24,14 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                ("amount", models.DecimalField(decimal_places=2, max_digits=12)),
-                ("transaction_id", models.CharField(max_length=255, unique=True)),
+                (
+                    "amount",
+                    models.DecimalField(decimal_places=2, max_digits=12),
+                ),
+                (
+                    "transaction_id",
+                    models.CharField(max_length=255, unique=True),
+                ),
                 (
                     "status",
                     models.CharField(

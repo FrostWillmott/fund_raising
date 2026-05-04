@@ -5,15 +5,28 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('collects', '0003_alter_collect_options_collect_cover_collect_occasion_and_more'),
+        (
+            "collects",
+            "0003_alter_collect_options_collect_cover_collect_occasion_and_more",
+        ),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='collect',
-            name='cover',
-            field=models.ImageField(blank=True, null=True, upload_to='collect_covers/%Y/%m/', validators=[django.core.validators.FileExtensionValidator(['jpg', 'jpeg', 'png', 'webp']), django.core.validators.MaxValueValidator(2097152)], verbose_name='Обложка'),
+            model_name="collect",
+            name="cover",
+            field=models.ImageField(
+                blank=True,
+                null=True,
+                upload_to="collect_covers/%Y/%m/",
+                validators=[
+                    django.core.validators.FileExtensionValidator(
+                        ["jpg", "jpeg", "png", "webp"]
+                    ),
+                    django.core.validators.MaxValueValidator(2097152),
+                ],
+                verbose_name="Обложка",
+            ),
         ),
     ]

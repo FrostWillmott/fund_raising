@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         (
             "collects",
@@ -62,7 +61,8 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name="payment",
             index=models.Index(
-                fields=["collect", "status"], name="payments_pa_collect_5823e5_idx"
+                fields=["collect", "status"],
+                name="payments_pa_collect_5823e5_idx",
             ),
         ),
     ]

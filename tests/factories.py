@@ -1,11 +1,13 @@
-import factory
-from django.contrib.auth import get_user_model
-from collects.models import Collect
-from payments.models import Payment
-from django.utils import timezone
 from decimal import Decimal
 
+import factory
+from django.contrib.auth import get_user_model
+
+from collects.models import Collect
+from payments.models import Payment
+
 User = get_user_model()
+
 
 class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
@@ -16,6 +18,7 @@ class UserFactory(factory.django.DjangoModelFactory):
     first_name = factory.Faker("first_name")
     last_name = factory.Faker("last_name")
 
+
 class CollectFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Collect
@@ -25,6 +28,7 @@ class CollectFactory(factory.django.DjangoModelFactory):
     description = factory.Faker("paragraph")
     goal_amount = Decimal("1000.00")
     created_by = factory.SubFactory(UserFactory)
+
 
 class PaymentFactory(factory.django.DjangoModelFactory):
     class Meta:

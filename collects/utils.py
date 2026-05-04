@@ -16,10 +16,8 @@ def process_cover_image(instance: Any) -> None:
         img.thumbnail((1200, 800), Image.LANCZOS)
 
     buffer = BytesIO()
-    img.save(buffer, format='JPEG', quality=85, optimize=True)
+    img.save(buffer, format="JPEG", quality=85, optimize=True)
 
     instance.cover.save(
-        instance.cover.name,
-        ContentFile(buffer.getvalue()),
-        save=False
+        instance.cover.name, ContentFile(buffer.getvalue()), save=False
     )
