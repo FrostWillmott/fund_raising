@@ -41,6 +41,7 @@ class CollectViewSet(viewsets.ModelViewSet):
                 ),
                 donors_count=models.Count("payments__payer", distinct=True),
             )
+            .order_by("-created_at")
         )
 
     @transaction.atomic

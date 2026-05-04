@@ -1,0 +1,14 @@
+services:
+  web:
+    command: gunicorn fund_raising.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    volumes: []
+    environment:
+      DJANGO_ENV: production
+
+  worker:
+    environment:
+      DJANGO_ENV: production
+
+  beat:
+    environment:
+      DJANGO_ENV: production

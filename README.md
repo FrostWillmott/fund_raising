@@ -44,6 +44,18 @@ docker compose up --build
 | Swagger UI | http://localhost:8000/docs/ |
 | MailHog | http://localhost:8025/ |
 
+## Production deployment
+
+Use the production override to run Django via Gunicorn and force production settings:
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+```
+
+Required production env vars:
+- `SECRET_KEY`
+- `ALLOWED_HOSTS`
+- `CORS_ALLOWED_ORIGINS` (comma-separated origins)
+
 ## API
 
 Authentication: JWT Bearer token.

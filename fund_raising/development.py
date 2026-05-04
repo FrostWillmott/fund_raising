@@ -1,3 +1,5 @@
+import os
+
 from fund_raising.base import *  # noqa
 
 DEBUG = True

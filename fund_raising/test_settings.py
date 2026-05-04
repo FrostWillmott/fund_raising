@@ -1,4 +1,10 @@
+import os
+
+os.environ.setdefault("SECRET_KEY", "test-only-not-secret")
+
 from fund_raising.development import *
+
+SECRET_KEY = "test-only-not-secret"
 
 DATABASES = {
     "default": {
