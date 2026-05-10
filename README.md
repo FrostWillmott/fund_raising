@@ -1,5 +1,14 @@
 # Group Fundraising Service
 
+[![CI](https://github.com/FrostWillmott/fund_raising/actions/workflows/ci.yml/badge.svg)](https://github.com/FrostWillmott/fund_raising/actions/workflows/ci.yml)
+[![Coverage](https://raw.githubusercontent.com/FrostWillmott/fund_raising/main/.github/badges/coverage.svg)](https://github.com/FrostWillmott/fund_raising/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.12-blue?logo=python&logoColor=white)](https://www.python.org/)
+[![Django](https://img.shields.io/badge/django-5.2-092E20?logo=django&logoColor=white)](https://www.djangoproject.com/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Docker](https://img.shields.io/badge/docker-ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+
 A production-ready REST API for group fundraising with JWT authentication,
 image processing, cache invalidation, and asynchronous email notifications.
 The project focuses on practical backend concerns: transactional safety,
