@@ -1,3 +1,7 @@
+<div align="center">
+  <img src=".github/banner.svg" alt="Group Fundraising Service" width="100%"/>
+</div>
+
 # Group Fundraising Service
 
 [![CI](https://github.com/FrostWillmott/fund_raising/actions/workflows/ci.yml/badge.svg)](https://github.com/FrostWillmott/fund_raising/actions/workflows/ci.yml)
