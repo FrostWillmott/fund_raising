@@ -34,7 +34,7 @@ class PaymentSerializer(serializers.ModelSerializer):
                 if field in data:
                     raise serializers.ValidationError(
                         {
-                            field: f"Поле '{field}' нельзя изменить после создания платежа"
+                            field: f"Field '{field}' cannot be changed after the payment is created."
                         }
                     )
         return data

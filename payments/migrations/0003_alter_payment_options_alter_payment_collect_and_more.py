@@ -20,8 +20,8 @@ class Migration(migrations.Migration):
             name="payment",
             options={
                 "ordering": ("-payment_date",),
-                "verbose_name": "Платёж",
-                "verbose_name_plural": "Платежи",
+                "verbose_name": "Payment",
+                "verbose_name_plural": "Payments",
             },
         ),
         migrations.AlterField(
@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
                 on_delete=django.db.models.deletion.CASCADE,
                 related_name="payments",
                 to="collects.collect",
-                verbose_name="Сбор",
+                verbose_name="Collect",
             ),
         ),
         migrations.AlterField(
@@ -42,7 +42,7 @@ class Migration(migrations.Migration):
                 on_delete=django.db.models.deletion.SET_NULL,
                 related_name="payments",
                 to=settings.AUTH_USER_MODEL,
-                verbose_name="Донатор",
+                verbose_name="Payer",
             ),
         ),
         migrations.AlterField(
@@ -50,9 +50,9 @@ class Migration(migrations.Migration):
             name="status",
             field=models.CharField(
                 choices=[
-                    ("pending", "Ожидает"),
-                    ("completed", "Успешен"),
-                    ("failed", "Неуспешен"),
+                    ("pending", "Pending"),
+                    ("completed", "Completed"),
+                    ("failed", "Failed"),
                 ],
                 default="pending",
                 max_length=10,

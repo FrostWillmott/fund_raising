@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 from drf_yasg import openapi
@@ -38,3 +39,8 @@ urlpatterns += [
     path("swagger.<str:format>/", raw_view, name="schema-json"),
     path("docs/", ui_view, name="schema-swagger-ui"),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(  # type: ignore[arg-type]
+        settings.MEDIA_URL, document_root=settings.MEDIA_ROOT
+    )

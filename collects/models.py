@@ -8,39 +8,39 @@ from collects.validators import validate_file_size
 
 class Collect(models.Model):
     class Occasion(models.TextChoices):
-        BIRTHDAY = "birthday", "День рождения"
-        WEDDING = "wedding", "Свадьба"
-        NEW_YEAR = "new_year", "Новый год"
-        OTHER = "other", "Другое"
+        BIRTHDAY = "birthday", "Birthday"
+        WEDDING = "wedding", "Wedding"
+        NEW_YEAR = "new_year", "New Year"
+        OTHER = "other", "Other"
 
-    title = models.CharField(max_length=255, verbose_name="Название")
+    title = models.CharField(max_length=255, verbose_name="Title")
     occasion = models.CharField(
         max_length=20,
         choices=Occasion.choices,
         default=Occasion.OTHER,
-        verbose_name="Повод",
+        verbose_name="Occasion",
     )
-    description = models.TextField(blank=True, verbose_name="Описание")
+    description = models.TextField(blank=True, verbose_name="Description")
     goal_amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         null=True,
         blank=True,
-        help_text="Оставьте пустым для нескончаемого сбора",
-        verbose_name="Цель сбора",
+        help_text="Leave blank for an open-ended fundraise.",
+        verbose_name="Goal amount",
     )
     collected_amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         default=0,
-        verbose_name="Собрано",
+        verbose_name="Collected amount",
     )
 
     start_date = models.DateTimeField(
-        default=timezone.now, verbose_name="Дата начала"
+        default=timezone.now, verbose_name="Start date"
     )
     end_date = models.DateTimeField(
-        null=True, blank=True, verbose_name="Дата окончания"
+        null=True, blank=True, verbose_name="End date"
     )
 
     cover = models.ImageField(
@@ -51,16 +51,16 @@ class Collect(models.Model):
         ],
         null=True,
         blank=True,
-        verbose_name="Обложка",
+        verbose_name="Cover",
     )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         related_name="collects",
-        verbose_name="Автор",
+        verbose_name="Author",
         null=True,
     )
-    is_active = models.BooleanField(default=True, verbose_name="Активен")
+    is_active = models.BooleanField(default=True, verbose_name="Active")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -69,5 +69,5 @@ class Collect(models.Model):
 
     class Meta:
         ordering = ("-created_at",)
-        verbose_name = "Сбор"
-        verbose_name_plural = "Сборы"
+        verbose_name = "Collect"
+        verbose_name_plural = "Collects"

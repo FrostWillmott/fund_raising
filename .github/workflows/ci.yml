@@ -11,6 +11,20 @@ jobs:
     permissions:
       contents: write
 
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: testpassword
+          MYSQL_DATABASE: fund_raising_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -50,6 +64,10 @@ jobs:
       - name: Pytest
         env:
           SECRET_KEY: ci-test-secret
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_DATABASE: fund_raising_test
+          MYSQL_USER: root
+          MYSQL_PASSWORD: testpassword
         run: poetry run pytest -q
 
       - name: Generate coverage badge

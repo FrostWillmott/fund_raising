@@ -7,15 +7,15 @@ from collects.models import Collect
 
 class Payment(models.Model):
     class Status(models.TextChoices):
-        PENDING = "pending", "Ожидает"
-        COMPLETED = "completed", "Успешен"
-        FAILED = "failed", "Неуспешен"
+        PENDING = "pending", "Pending"
+        COMPLETED = "completed", "Completed"
+        FAILED = "failed", "Failed"
 
     collect = models.ForeignKey(
         Collect,
         on_delete=models.SET_NULL,
         related_name="payments",
-        verbose_name="Сбор",
+        verbose_name="Collect",
         null=True,
     )
     payer = models.ForeignKey(
@@ -23,7 +23,7 @@ class Payment(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         related_name="payments",
-        verbose_name="Донатор",
+        verbose_name="Payer",
     )
 
     amount = models.DecimalField(max_digits=12, decimal_places=2)
@@ -37,7 +37,6 @@ class Payment(models.Model):
     metadata = models.JSONField(blank=True, null=True)
 
     def save(self, *args, **kwargs):
-        """При первом успешном сохранении увеличиваем собранную сумму."""
         creating = self._state.adding
         super().save(*args, **kwargs)
 
@@ -52,8 +51,8 @@ class Payment(models.Model):
 
     class Meta:
         ordering = ("-payment_date",)
-        verbose_name = "Платёж"
-        verbose_name_plural = "Платежи"
+        verbose_name = "Payment"
+        verbose_name_plural = "Payments"
         indexes = [
             models.Index(fields=("collect", "status")),
         ]

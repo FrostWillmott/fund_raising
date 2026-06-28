@@ -1,12 +1,44 @@
+import os
 from decimal import Decimal
+from io import BytesIO
 
 import pytest
 from django.core.cache import cache
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
+from PIL import Image
 from rest_framework import status
 from rest_framework.test import APIClient
 
 from collects.models import Collect
+
+
+def _make_image(
+    width: int, height: int, mode: str = "RGB", fmt: str = "JPEG"
+) -> SimpleUploadedFile:
+    buf = BytesIO()
+    Image.new(mode, (width, height), color=(100, 150, 200)).save(
+        buf, format=fmt
+    )
+    buf.seek(0)
+    ext = "jpg" if fmt == "JPEG" else fmt.lower()
+    return SimpleUploadedFile(
+        f"test.{ext}", buf.read(), content_type=f"image/{fmt.lower()}"
+    )
+
+
+def _make_large_image() -> SimpleUploadedFile:
+    """Return a valid PNG over 2 MB by storing uncompressed random pixel data."""
+    raw = os.urandom(
+        900 * 800 * 3
+    )  # ~2.16 MB raw; PNG compress_level=0 keeps it above 2 MB
+    img = Image.frombytes("RGB", (900, 800), raw)
+    buf = BytesIO()
+    img.save(buf, format="PNG", compress_level=0)
+    buf.seek(0)
+    return SimpleUploadedFile(
+        "large.png", buf.read(), content_type="image/png"
+    )
 
 
 @pytest.mark.django_db
@@ -146,7 +178,7 @@ class TestPaymentAPI:
         assert first_response.status_code == status.HTTP_201_CREATED
         assert second_response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_payment_patch_is_not_allowed_for_other_user(
+    def test_payment_patch_returns_405(
         self, auth_client, user_factory, payment_factory
     ):
         other_client = APIClient()
@@ -157,3 +189,55 @@ class TestPaymentAPI:
         response = other_client.patch(url, {"amount": "999.00"})
 
         assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
+
+@pytest.mark.django_db
+class TestCoverImage:
+    def test_oversized_file_rejected(self, auth_client):
+        url = reverse("v1:collect-list")
+        data = {
+            "title": "Test",
+            "occasion": "other",
+            "cover": _make_large_image(),
+        }
+        response = auth_client.post(url, data, format="multipart")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_png_cover_stored_as_jpg(self, auth_client):
+        url = reverse("v1:collect-list")
+        cover = _make_image(100, 100, mode="RGB", fmt="PNG")
+        data = {
+            "title": "PNG upload",
+            "occasion": "other",
+            "cover": cover,
+        }
+        response = auth_client.post(url, data, format="multipart")
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data["cover_url"].endswith(".jpg")
+
+    def test_oversized_image_is_resized(self, auth_client):
+        url = reverse("v1:collect-list")
+        cover = _make_image(2000, 1500, fmt="JPEG")
+        data = {
+            "title": "Large image",
+            "occasion": "other",
+            "cover": cover,
+        }
+        response = auth_client.post(url, data, format="multipart")
+        assert response.status_code == status.HTTP_201_CREATED
+        collect = Collect.objects.get(id=response.data["id"])
+        img = Image.open(collect.cover)
+        assert img.width <= 1200
+        assert img.height <= 800
+
+    def test_rgba_png_cover_stored_as_jpg(self, auth_client):
+        url = reverse("v1:collect-list")
+        cover = _make_image(100, 100, mode="RGBA", fmt="PNG")
+        data = {
+            "title": "RGBA upload",
+            "occasion": "other",
+            "cover": cover,
+        }
+        response = auth_client.post(url, data, format="multipart")
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data["cover_url"].endswith(".jpg")

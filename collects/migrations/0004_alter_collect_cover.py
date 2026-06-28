@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
                     ),
                     django.core.validators.MaxValueValidator(2097152),
                 ],
-                verbose_name="Обложка",
+                verbose_name="Cover",
             ),
         ),
     ]

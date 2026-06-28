@@ -11,6 +11,8 @@ from api.v1.payments.serializers import PaymentSerializer
 from payments.models import Payment
 from payments.tasks import send_payment_email
 
+_CACHE_TTL = 60
+
 
 class PaymentViewSet(viewsets.ModelViewSet):
     serializer_class = PaymentSerializer
@@ -42,10 +44,10 @@ class PaymentViewSet(viewsets.ModelViewSet):
         transaction.on_commit(lambda: cache.delete_pattern("*collects*"))  # type: ignore[attr-defined]
         transaction.on_commit(lambda: cache.delete_pattern("*payments*"))  # type: ignore[attr-defined]
 
-    @method_decorator(cache_page(60 * 1))
+    @method_decorator(cache_page(_CACHE_TTL))
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
-    @method_decorator(cache_page(60 * 1))
+    @method_decorator(cache_page(_CACHE_TTL))
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)

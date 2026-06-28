@@ -2,10 +2,13 @@ from rest_framework import serializers
 
 from api.v1.payments.serializers import PaymentListSerializer
 from collects.models import Collect
+from collects.validators import validate_file_size
 
 
 class CollectSerializer(serializers.ModelSerializer):
-    cover = serializers.ImageField(write_only=True, required=False)
+    cover = serializers.ImageField(
+        write_only=True, required=False, validators=[validate_file_size]
+    )
     cover_url = serializers.SerializerMethodField(read_only=True)
     payments = PaymentListSerializer(many=True, read_only=True)
 

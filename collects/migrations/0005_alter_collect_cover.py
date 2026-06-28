@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
                     ),
                     collects.validators.validate_file_size,
                 ],
-                verbose_name="Обложка",
+                verbose_name="Cover",
             ),
         ),
     ]

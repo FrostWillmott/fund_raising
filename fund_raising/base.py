@@ -2,6 +2,7 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+from celery.schedules import crontab
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -65,14 +66,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "fund_raising.wsgi.application"
 
-# База данных по умолчанию (SQLite в development)
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
@@ -104,6 +97,10 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
@@ -136,6 +133,13 @@ CACHES = {
         "LOCATION": os.getenv("REDIS_CACHE_URL", "redis://redis:6379/1"),
         "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
     }
+}
+
+CELERY_BEAT_SCHEDULE = {
+    "deactivate-expired-collects": {
+        "task": "collects.tasks.deactivate_expired_collects",
+        "schedule": crontab(hour="*/6", minute=0),
+    },
 }
 
 SWAGGER_USE_COMPAT_RENDERERS = False

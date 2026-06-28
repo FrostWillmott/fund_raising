@@ -1,4 +1,4 @@
-FROM python:3.13.13-slim
+FROM python:3.13.13-slim AS builder
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
@@ -9,8 +9,22 @@ WORKDIR /app
 
 COPY pyproject.toml poetry.lock README.md LICENSE /app/
 
-RUN poetry config virtualenvs.create false \
- && poetry install --no-interaction --no-ansi --no-root
+RUN poetry config virtualenvs.create true \
+ && poetry config virtualenvs.in-project true \
+ && poetry install --no-interaction --no-ansi --no-root --only main
+
+
+FROM python:3.13.13-slim AS runtime
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends default-libmysqlclient-dev \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=builder /app/.venv /app/.venv
+
+ENV PATH="/app/.venv/bin:$PATH"
 
 COPY . /app/
 

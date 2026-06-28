@@ -6,6 +6,7 @@ from datetime import timedelta
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand
 from django.db import models
 from django.utils import timezone
@@ -49,6 +50,7 @@ class Command(BaseCommand):
         num_existing_users = len(existing_users)
 
         if num_existing_users < num_users:
+            hashed_password = make_password("testpassword")
             users_to_create = []
             for _ in range(num_existing_users + 1, num_users + 1):
                 profile = fake.profile()
@@ -66,6 +68,7 @@ class Command(BaseCommand):
                         email=profile["mail"],
                         first_name=fake.first_name(),
                         last_name=fake.last_name(),
+                        password=hashed_password,
                         is_active=True,
                     )
                 )
@@ -73,9 +76,6 @@ class Command(BaseCommand):
             created_users = User.objects.bulk_create(
                 users_to_create, batch_size=500
             )
-            for user in created_users:
-                user.set_password("testpassword")
-                user.save()
 
             all_users = existing_users + created_users
         else:
@@ -90,53 +90,53 @@ class Command(BaseCommand):
         occasion_templates = {
             "birthday": {
                 "titles": [
-                    "День рождения {name}",
-                    "{age}-летие {name}",
-                    "Подарок на ДР {name}",
-                    "Собираем на подарок {name}",
+                    "Birthday fundraise for {name}",
+                    "{name}'s {age}th birthday",
+                    "Birthday gift for {name}",
+                    "Collecting for {name}'s gift",
                 ],
                 "descriptions": [
-                    "Собираем на подарок {name} в честь {age}-летия! Поможем сделать день рождения незабываемым!",
-                    "{name} исполняется {age} лет, давайте вместе сделаем подарок",
-                    "День рождения {name} уже скоро! Соберем на незабываемый подарок",
+                    "We are collecting for {name}'s {age}th birthday gift! Let's make their birthday unforgettable!",
+                    "{name} is turning {age} — let's chip in for a gift together.",
+                    "{name}'s birthday is coming up! Let's collect for an unforgettable gift.",
                 ],
             },
             "wedding": {
                 "titles": [
-                    "Свадьба {name1} и {name2}",
-                    "На свадебное путешествие {name1} и {name2}",
-                    "Подарок молодоженам {name1} и {name2}",
+                    "Wedding of {name1} and {name2}",
+                    "Honeymoon trip for {name1} and {name2}",
+                    "Wedding gift for {name1} and {name2}",
                 ],
                 "descriptions": [
-                    "Дорогие друзья! {date} состоится свадьба {name1} и {name2}. Вместо цветов и подарков молодожены будут рады вашему вкладу в их совместную жизнь!",
-                    "Помогите {name1} и {name2} начать семейную жизнь с незабываемого свадебного путешествия!",
-                    "{name1} и {name2} соединяют свои судьбы {date}. Мы собираем на подарок, который поможет им в их новой жизни.",
+                    "Dear friends! {name1} and {name2} are getting married on {date}. Instead of flowers or gifts, the couple would love your contribution to their new life together!",
+                    "Help {name1} and {name2} start their married life with an unforgettable honeymoon!",
+                    "{name1} and {name2} are tying the knot on {date}. We're collecting for a gift that will help them in their new life together.",
                 ],
             },
             "new_year": {
                 "titles": [
-                    "Новогодний корпоратив {company}",
-                    "Новогодние подарки детям",
-                    "Корпоративный Новый Год {year}",
+                    "New Year corporate party at {company}",
+                    "New Year gifts for children",
+                    "Corporate New Year {year}",
                 ],
                 "descriptions": [
-                    "Собираем на корпоративный новогодний праздник компании {company}. Сделаем этот Новый Год незабываемым!",
-                    "Давайте вместе порадуем детей новогодними подарками! Каждый ребенок должен получить праздник.",
-                    "Новый {year} год уже скоро! Соберем деньги на отличный корпоратив для всей команды {company}.",
+                    "Collecting for the corporate New Year party at {company}. Let's make this New Year unforgettable!",
+                    "Let's bring joy to children with New Year gifts! Every child deserves a celebration.",
+                    "New Year {year} is right around the corner! Let's raise funds for a great corporate party for the {company} team.",
                 ],
             },
             "other": {
                 "titles": [
-                    "{activity} для команды {team}",
-                    "Подарок коллеге {name}",
-                    "Благотворительный сбор: {cause}",
-                    "Сбор на {item} для {purpose}",
+                    "{activity} for team {team}",
+                    "Gift for colleague {name}",
+                    "Charity fundraise: {cause}",
+                    "Raising funds for {item} for {purpose}",
                 ],
                 "descriptions": [
-                    "Мы собираем средства на {activity} для нашей команды {team}. Это отличная возможность для укрепления командного духа!",
-                    "Наш коллега {name} {reason}. Давайте вместе поможем и поддержим!",
-                    "Благотворительный сбор в поддержку {cause}. Ваша помощь очень важна!",
-                    "Собираем на {item}, который будет использован для {purpose}. Любая помощь ценна!",
+                    "We are raising funds for {activity} for our team {team}. A great opportunity to strengthen team spirit!",
+                    "Our colleague {name} {reason}. Let's come together to help and show our support!",
+                    "Charity fundraise in support of {cause}. Your help matters greatly!",
+                    "Collecting for {item} that will be used for {purpose}. Every contribution counts!",
                 ],
             },
         }
@@ -174,40 +174,40 @@ class Command(BaseCommand):
                     "year": timezone.now().year + 1,
                     "activity": random.choice(
                         [
-                            "Тимбилдинг",
-                            "Поход",
-                            "Квест",
-                            "Экскурсия",
-                            "Мастер-класс",
+                            "Team building",
+                            "Hiking trip",
+                            "Quest",
+                            "Excursion",
+                            "Masterclass",
                         ]
                     ),
                     "reason": random.choice(
                         [
-                            "уходит на пенсию",
-                            "переезжает в другой город",
-                            "стал родителем",
-                            "защитил диссертацию",
+                            "is retiring",
+                            "is moving to another city",
+                            "became a parent",
+                            "defended their dissertation",
                         ]
                     ),
                     "cause": random.choice(
                         [
-                            "детского дома",
-                            "приюта для животных",
-                            "больницы",
-                            "школы",
+                            "an orphanage",
+                            "an animal shelter",
+                            "a hospital",
+                            "a school",
                         ]
                     ),
                     "item": random.choice(
                         [
-                            "оборудование",
-                            "мебель",
-                            "компьютер",
-                            "инструменты",
-                            "книги",
+                            "equipment",
+                            "furniture",
+                            "a computer",
+                            "tools",
+                            "books",
                         ]
                     ),
                     "purpose": random.choice(
-                        ["обучения", "лечения", "развития", "исследований"]
+                        ["education", "treatment", "development", "research"]
                     ),
                     "date": fake.date_this_year(
                         before_today=False, after_today=True

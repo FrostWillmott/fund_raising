@@ -16,6 +16,8 @@ from api.v1.collects.serializers import CollectSerializer
 from collects.models import Collect
 from collects.tasks import send_donation_email
 
+_CACHE_TTL = 60
+
 
 class CollectViewSet(viewsets.ModelViewSet):
     serializer_class = CollectSerializer
@@ -68,18 +70,18 @@ class CollectViewSet(viewsets.ModelViewSet):
         if instance.payments.exists():
             raise exceptions.ValidationError(
                 {
-                    "detail": "Невозможно удалить сбор, в котором уже есть платежи. Сделайте его неактивным вместо удаления."
+                    "detail": "Cannot delete a collect that already has payments. Set it as inactive instead."
                 }
             )
 
         instance.delete()
         transaction.on_commit(lambda: cache.delete_pattern("*collects*"))  # type: ignore[attr-defined]
 
-    @method_decorator(cache_page(60 * 1))
+    @method_decorator(cache_page(_CACHE_TTL))
     def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return super().list(request, *args, **kwargs)
 
-    @method_decorator(cache_page(60 * 1))
+    @method_decorator(cache_page(_CACHE_TTL))
     def retrieve(
         self, request: Request, *args: Any, **kwargs: Any
     ) -> Response:

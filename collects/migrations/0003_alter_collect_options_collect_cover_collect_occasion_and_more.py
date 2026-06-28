@@ -17,8 +17,8 @@ class Migration(migrations.Migration):
             name="collect",
             options={
                 "ordering": ("-created_at",),
-                "verbose_name": "Сбор",
-                "verbose_name_plural": "Сборы",
+                "verbose_name": "Collect",
+                "verbose_name_plural": "Collects",
             },
         ),
         migrations.AddField(
@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
                 blank=True,
                 null=True,
                 upload_to="collect_covers/",
-                verbose_name="Обложка",
+                verbose_name="Cover",
             ),
         ),
         migrations.AddField(
@@ -36,14 +36,14 @@ class Migration(migrations.Migration):
             name="occasion",
             field=models.CharField(
                 choices=[
-                    ("birthday", "День рождения"),
-                    ("wedding", "Свадьба"),
-                    ("new_year", "Новый год"),
-                    ("other", "Другое"),
+                    ("birthday", "Birthday"),
+                    ("wedding", "Wedding"),
+                    ("new_year", "New Year"),
+                    ("other", "Other"),
                 ],
                 default="other",
                 max_length=20,
-                verbose_name="Повод",
+                verbose_name="Occasion",
             ),
         ),
         migrations.AlterField(
@@ -53,7 +53,7 @@ class Migration(migrations.Migration):
                 decimal_places=2,
                 default=0,
                 max_digits=12,
-                verbose_name="Собрано",
+                verbose_name="Collected amount",
             ),
         ),
         migrations.AlterField(
@@ -63,19 +63,19 @@ class Migration(migrations.Migration):
                 on_delete=django.db.models.deletion.CASCADE,
                 related_name="collects",
                 to=settings.AUTH_USER_MODEL,
-                verbose_name="Автор",
+                verbose_name="Author",
             ),
         ),
         migrations.AlterField(
             model_name="collect",
             name="description",
-            field=models.TextField(blank=True, verbose_name="Описание"),
+            field=models.TextField(blank=True, verbose_name="Description"),
         ),
         migrations.AlterField(
             model_name="collect",
             name="end_date",
             field=models.DateTimeField(
-                blank=True, null=True, verbose_name="Дата окончания"
+                blank=True, null=True, verbose_name="End date"
             ),
         ),
         migrations.AlterField(
@@ -84,27 +84,27 @@ class Migration(migrations.Migration):
             field=models.DecimalField(
                 blank=True,
                 decimal_places=2,
-                help_text="Оставьте пустым для нескончаемого сбора",
+                help_text="Leave blank for an open-ended fundraise.",
                 max_digits=12,
                 null=True,
-                verbose_name="Цель сбора",
+                verbose_name="Goal amount",
             ),
         ),
         migrations.AlterField(
             model_name="collect",
             name="is_active",
-            field=models.BooleanField(default=True, verbose_name="Активен"),
+            field=models.BooleanField(default=True, verbose_name="Active"),
         ),
         migrations.AlterField(
             model_name="collect",
             name="start_date",
             field=models.DateTimeField(
-                default=django.utils.timezone.now, verbose_name="Дата начала"
+                default=django.utils.timezone.now, verbose_name="Start date"
             ),
         ),
         migrations.AlterField(
             model_name="collect",
             name="title",
-            field=models.CharField(max_length=255, verbose_name="Название"),
+            field=models.CharField(max_length=255, verbose_name="Title"),
         ),
     ]

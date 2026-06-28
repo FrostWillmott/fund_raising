@@ -6,6 +6,7 @@ services:
                python manage.py runserver 0.0.0.0:8000"
     volumes:
       - .:/app:rw
+      - media_data:/app/media
     ports:
       - "8000:8000"
     env_file:
@@ -21,6 +22,7 @@ services:
     command: celery -A fund_raising worker --loglevel=info
     volumes:
       - .:/app
+      - media_data:/app/media
     env_file:
       - .env
     depends_on:
@@ -76,3 +78,4 @@ services:
 volumes:
   mongo_data:
   mysql_data:
+  media_data:
