@@ -74,6 +74,7 @@ jobs:
         run: |
           mkdir -p .github/badges
           poetry run genbadge coverage -i coverage.xml -o .github/badges/coverage.svg
+          printf '\n' >> .github/badges/coverage.svg
 
       - name: Commit coverage badge
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
