@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 
 from api.v1.payments.serializers import PaymentListSerializer
@@ -55,3 +56,15 @@ class CollectSerializer(serializers.ModelSerializer):
         if obj.cover and request:
             return request.build_absolute_uri(obj.cover.url)
         return None
+
+    def validate(self, data: dict) -> dict:
+        end_date = data.get("end_date")
+        if end_date:
+            start_date = (
+                self.instance.start_date if self.instance else timezone.now()
+            )
+            if end_date <= start_date:
+                raise serializers.ValidationError(
+                    {"end_date": "end_date must be after start_date."}
+                )
+        return data

@@ -1,9 +1,9 @@
 from django.core.cache import cache
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import QuerySet
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
-from rest_framework import permissions, viewsets
+from rest_framework import exceptions, permissions, viewsets
 
 from api.pagination import ResultsSetPagination
 from api.permissions import IsPaymentPayerOrReadOnly
@@ -29,10 +29,18 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
     @transaction.atomic
     def perform_create(self, serializer: PaymentSerializer) -> None:
-        payment = serializer.save(
-            payer=self.request.user,
-            status=Payment.Status.COMPLETED,
-        )
+        try:
+            # Nested atomic (savepoint): an IntegrityError from a concurrent
+            # duplicate transaction_id must not poison the outer transaction.
+            with transaction.atomic():
+                payment = serializer.save(
+                    payer=self.request.user,
+                    status=Payment.Status.COMPLETED,
+                )
+        except IntegrityError as exc:
+            raise exceptions.ValidationError(
+                {"transaction_id": "transaction_id must be unique"}
+            ) from exc
         if payment.payer and payment.payer.email and payment.collect:
             transaction.on_commit(
                 lambda: send_payment_email.delay(

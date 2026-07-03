@@ -1,5 +1,7 @@
+from decimal import Decimal
+
 from django.conf import settings
-from django.core.validators import FileExtensionValidator
+from django.core.validators import FileExtensionValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
 
@@ -28,6 +30,7 @@ class Collect(models.Model):
         blank=True,
         help_text="Leave blank for an open-ended fundraise.",
         verbose_name="Goal amount",
+        validators=[MinValueValidator(Decimal("0.01"))],
     )
     collected_amount = models.DecimalField(
         max_digits=12,

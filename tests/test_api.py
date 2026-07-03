@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from decimal import Decimal
 from io import BytesIO
 
@@ -6,6 +7,7 @@ import pytest
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
+from django.utils import timezone
 from PIL import Image
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -70,6 +72,19 @@ class TestCollectAPI:
         assert response.status_code == status.HTTP_201_CREATED
         assert Collect.objects.filter(title="New Fund").exists()
         assert response.data["title"] == "New Fund"
+
+    def test_create_collect_with_end_date_in_past_returns_400(
+        self, auth_client
+    ):
+        url = reverse("v1:collect-list")
+        data = {
+            "title": "New Fund",
+            "occasion": "birthday",
+            "end_date": (timezone.now() - timedelta(days=1)).isoformat(),
+        }
+        response = auth_client.post(url, data)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_unauthorized_access(self, api_client):
         url = reverse("v1:collect-list")
@@ -177,6 +192,85 @@ class TestPaymentAPI:
 
         assert first_response.status_code == status.HTTP_201_CREATED
         assert second_response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_negative_amount_returns_400(self, auth_client, collect_factory):
+        collect = collect_factory()
+        url = reverse("v1:payment-list")
+        data = {
+            "collect": collect.id,
+            "amount": "-100.00",
+            "transaction_id": "test_negative_amount",
+        }
+
+        response = auth_client.post(url, data)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_zero_amount_returns_400(self, auth_client, collect_factory):
+        collect = collect_factory()
+        url = reverse("v1:payment-list")
+        data = {
+            "collect": collect.id,
+            "amount": "0.00",
+            "transaction_id": "test_zero_amount",
+        }
+
+        response = auth_client.post(url, data)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_donation_to_inactive_collect_returns_400(
+        self, auth_client, collect_factory
+    ):
+        collect = collect_factory(is_active=False)
+        url = reverse("v1:payment-list")
+        data = {
+            "collect": collect.id,
+            "amount": "100.00",
+            "transaction_id": "test_inactive_collect",
+        }
+
+        response = auth_client.post(url, data)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_donation_to_expired_collect_returns_400(
+        self, auth_client, collect_factory
+    ):
+        collect = collect_factory(end_date=timezone.now() - timedelta(days=1))
+        url = reverse("v1:payment-list")
+        data = {
+            "collect": collect.id,
+            "amount": "100.00",
+            "transaction_id": "test_expired_collect",
+        }
+
+        response = auth_client.post(url, data)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_null_collect_returns_400(self, auth_client):
+        url = reverse("v1:payment-list")
+        data = {
+            "collect": None,
+            "amount": "100.00",
+            "transaction_id": "test_null_collect",
+        }
+
+        response = auth_client.post(url, data, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_missing_collect_returns_400(self, auth_client):
+        url = reverse("v1:payment-list")
+        data = {
+            "amount": "100.00",
+            "transaction_id": "test_missing_collect",
+        }
+
+        response = auth_client.post(url, data)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_payment_patch_returns_405(
         self, auth_client, user_factory, payment_factory

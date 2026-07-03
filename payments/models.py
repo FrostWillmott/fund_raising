@@ -1,4 +1,7 @@
+from decimal import Decimal
+
 from django.conf import settings
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import F
 
@@ -26,7 +29,11 @@ class Payment(models.Model):
         verbose_name="Payer",
     )
 
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.01"))],
+    )
     transaction_id = models.CharField(max_length=255, unique=True)
     status = models.CharField(
         max_length=10,

@@ -1,10 +1,22 @@
+from decimal import Decimal
+
+from django.utils import timezone
 from rest_framework import serializers
 
+from collects.models import Collect
 from payments.models import Payment
 
 
 class PaymentSerializer(serializers.ModelSerializer):
     transaction_id = serializers.CharField(max_length=255)
+    amount = serializers.DecimalField(
+        max_digits=12, decimal_places=2, min_value=Decimal("0.01")
+    )
+    # The model FK is nullable (payments survive collect deletion), but the
+    # API must not accept orphan payments: required and non-null here.
+    collect = serializers.PrimaryKeyRelatedField(
+        queryset=Collect.objects.all()
+    )
 
     class Meta:
         model = Payment
@@ -25,6 +37,15 @@ class PaymentSerializer(serializers.ModelSerializer):
             and Payment.objects.filter(transaction_id=value).exists()
         ):
             raise serializers.ValidationError("transaction_id must be unique")
+        return value
+
+    def validate_collect(self, value: Collect) -> Collect:
+        if not value.is_active or (
+            value.end_date and value.end_date < timezone.now()
+        ):
+            raise serializers.ValidationError(
+                "This collect is not accepting donations."
+            )
         return value
 
     def validate(self, data: dict) -> dict:
