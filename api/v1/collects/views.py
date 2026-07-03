@@ -62,18 +62,18 @@ class CollectViewSet(viewsets.ModelViewSet):
 
     @transaction.atomic
     def perform_update(self, serializer) -> None:
-        instance = serializer.instance
         cover_changed = "cover" in serializer.validated_data
         serializer.save()
-        if cover_changed and instance.cover:
+        if cover_changed and serializer.instance.cover:
+            instance_id = serializer.instance.id
             transaction.on_commit(
-                lambda: process_cover_image_task.delay(instance.id)
+                lambda: process_cover_image_task.delay(instance_id)
             )
         transaction.on_commit(lambda: invalidate_cache("collects"))
 
     @transaction.atomic
     def perform_destroy(self, instance) -> None:
-        if instance.payments.exists():
+        if instance.donations_count > 0:
             raise exceptions.ValidationError(
                 {
                     "detail": "Cannot delete a collect that already has payments. Set it as inactive instead."
