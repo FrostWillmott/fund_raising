@@ -10,7 +10,6 @@ from django.core.mail import send_mail
     retry_kwargs={"max_retries": 3},
 )
 def send_donation_email(amount: str, title: str, email: str) -> None:
-    "An email to the author regarding the creation of a collection (or another purpose)."
     send_mail(
         subject="Collect created",
         message=f'You have created a fundraise "{title}" with a goal of {amount}. Good luck!',
