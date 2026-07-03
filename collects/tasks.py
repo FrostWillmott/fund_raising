@@ -31,6 +31,7 @@ def process_cover_image_task(collect_id: int) -> None:
     """
     from collects.models import Collect
     from collects.utils import process_cover_image
+    from fund_raising.cache import invalidate_cache
 
     try:
         collect = Collect.objects.get(pk=collect_id)
@@ -42,6 +43,9 @@ def process_cover_image_task(collect_id: int) -> None:
 
     process_cover_image(collect)
     collect.save(update_fields=["cover"])
+    # The cover URL changed (new filename/format); cached collect pages
+    # still hold the old URL and must be invalidated again.
+    invalidate_cache("collects")
 
 
 @shared_task
