@@ -12,15 +12,15 @@ class PaymentSerializer(serializers.ModelSerializer):
     amount = serializers.DecimalField(
         max_digits=12, decimal_places=2, min_value=Decimal("0.01")
     )
-    # The model FK is nullable (payments survive collect deletion), but the
-    # API must not accept orphan payments: required and non-null here.
+    # The model FK is nullable, but the API must not accept orphan
+    # payments: required and non-null here.
     collect = serializers.PrimaryKeyRelatedField(
         queryset=Collect.objects.all()
     )
 
     class Meta:
         model = Payment
-        read_only_fields = ("id", "status", "transaction_id", "payment_date")
+        read_only_fields = ("id", "status", "payment_date")
         fields = (
             "id",
             "collect",
@@ -47,18 +47,6 @@ class PaymentSerializer(serializers.ModelSerializer):
                 "This collect is not accepting donations."
             )
         return value
-
-    def validate(self, data: dict) -> dict:
-        if self.instance:
-            protected_fields = ["amount", "transaction_id", "collect"]
-            for field in protected_fields:
-                if field in data:
-                    raise serializers.ValidationError(
-                        {
-                            field: f"Field '{field}' cannot be changed after the payment is created."
-                        }
-                    )
-        return data
 
 
 class PaymentListSerializer(serializers.ModelSerializer):

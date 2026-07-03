@@ -241,8 +241,8 @@ class TestPaymentAPI:
         collect.refresh_from_db()
         assert collect.collected_amount == Decimal("150.00")
 
-    def test_payment_list(self, auth_client, payment_factory):
-        payment_factory.create_batch(2)
+    def test_payment_list(self, auth_client, user, payment_factory):
+        payment_factory.create_batch(2, payer=user)
         url = reverse("v1:payment-list")
         response = auth_client.get(url)
 
@@ -324,6 +324,21 @@ class TestPaymentAPI:
         response = auth_client.post(url, data)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_user_cannot_see_others_payments(
+        self, auth_client, user_factory, payment_factory
+    ):
+        other_payment = payment_factory(payer=user_factory())
+
+        list_response = auth_client.get(reverse("v1:payment-list"))
+        assert list_response.status_code == status.HTTP_200_OK
+        items = list_response.data.get("results", list_response.data)
+        assert all(item["id"] != other_payment.id for item in items)
+
+        retrieve_response = auth_client.get(
+            reverse("v1:payment-detail", kwargs={"id": other_payment.id})
+        )
+        assert retrieve_response.status_code == status.HTTP_404_NOT_FOUND
 
     def test_null_collect_returns_400(self, auth_client):
         url = reverse("v1:payment-list")

@@ -41,6 +41,9 @@ DATABASES = {
         "PASSWORD": os.getenv("MYSQL_PASSWORD"),
         "HOST": os.getenv("MYSQL_HOST", "db"),
         "PORT": os.getenv("MYSQL_PORT", "3306"),
+        # Reuse connections in long-lived Gunicorn workers instead of
+        # opening a new MySQL connection on every request.
+        "CONN_MAX_AGE": int(os.getenv("CONN_MAX_AGE", "60")),
         "OPTIONS": {
             "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
             "charset": "utf8mb4",

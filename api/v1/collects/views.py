@@ -10,7 +10,6 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 
-from api.cache import invalidate_cache
 from api.pagination import ResultsSetPagination
 from api.permissions import IsCollectAuthorOrReadOnly
 from api.v1.collects.serializers import (
@@ -19,6 +18,7 @@ from api.v1.collects.serializers import (
 )
 from collects.models import Collect
 from collects.services import create_collect
+from fund_raising.cache import invalidate_cache
 
 _CACHE_TTL = 60
 

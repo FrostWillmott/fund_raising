@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 
 from django.contrib.auth.models import User
@@ -5,10 +6,20 @@ from django.db import IntegrityError, transaction
 from django.db.models import F
 from rest_framework import exceptions
 
-from api.cache import invalidate_cache
 from collects.models import Collect
+from fund_raising.cache import invalidate_cache
 from payments.models import Payment
 from payments.tasks import send_payment_email
+
+logger = logging.getLogger(__name__)
+
+
+def _enqueue_payment_email(amount: str, title: str, email: str) -> None:
+    # A broker outage must not turn an already-committed payment into a 500.
+    try:
+        send_payment_email.delay(amount=amount, title=title, email=email)
+    except Exception:
+        logger.exception("Failed to enqueue payment email to %s", email)
 
 
 def create_payment(*, payer: User, **validated_data: Any) -> Payment:
@@ -45,11 +56,11 @@ def create_payment(*, payer: User, **validated_data: Any) -> Payment:
         if payer_email and collect_title:
             amount_str = str(payment.amount)
             transaction.on_commit(
-                lambda: send_payment_email.delay(
-                    amount=amount_str,
-                    title=collect_title,
-                    email=payer_email,
+                lambda: _enqueue_payment_email(
+                    amount_str, collect_title, payer_email
                 )
             )
-        transaction.on_commit(lambda: invalidate_cache("collects", "payments"))
+        # Payment list/retrieve are per-user and no longer cached; only the
+        # collect pages (collected_amount, embedded feed) need invalidation.
+        transaction.on_commit(lambda: invalidate_cache("collects"))
     return payment

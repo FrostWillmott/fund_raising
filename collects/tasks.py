@@ -1,8 +1,14 @@
+import smtplib
+
 from celery import shared_task
 from django.core.mail import send_mail
 
 
-@shared_task
+@shared_task(
+    autoretry_for=(OSError, smtplib.SMTPException),
+    retry_backoff=True,
+    retry_kwargs={"max_retries": 3},
+)
 def send_donation_email(amount: str, title: str, email: str) -> None:
     "An email to the author regarding the creation of a collection (or another purpose)."
     send_mail(
@@ -10,7 +16,6 @@ def send_donation_email(amount: str, title: str, email: str) -> None:
         message=f'You have created a fundraise "{title}" with a goal of {amount}. Good luck!',
         recipient_list=[email],
         from_email=None,
-        fail_silently=True,
     )
 
 

@@ -74,6 +74,9 @@ DATABASES = {
         "PASSWORD": os.environ.get("MYSQL_PASSWORD", "password"),
         "HOST": os.environ.get("MYSQL_HOST", "mysql"),
         "PORT": os.environ.get("MYSQL_PORT", "3306"),
+        # Reuse connections in long-lived workers (Gunicorn) instead of
+        # opening a new MySQL connection on every request.
+        "CONN_MAX_AGE": int(os.getenv("CONN_MAX_AGE", "60")),
     }
 }
 
