@@ -1,3 +1,5 @@
+from typing import Any
+
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -5,13 +7,16 @@ from api.v1.payments.serializers import PaymentListSerializer
 from collects.models import Collect
 from collects.validators import validate_file_size
 
+# How many recent payments the detail endpoint embeds; the full feed is
+# unbounded and would need a dedicated paginated endpoint.
+_RECENT_PAYMENTS_LIMIT = 10
 
-class CollectSerializer(serializers.ModelSerializer):
+
+class CollectListSerializer(serializers.ModelSerializer):
     cover = serializers.ImageField(
         write_only=True, required=False, validators=[validate_file_size]
     )
     cover_url = serializers.SerializerMethodField(read_only=True)
-    payments = PaymentListSerializer(many=True, read_only=True)
 
     donations_count = serializers.IntegerField(read_only=True)
     successful_donations_count = serializers.IntegerField(read_only=True)
@@ -26,11 +31,10 @@ class CollectSerializer(serializers.ModelSerializer):
             "updated_at",
             "collected_amount",
             "start_date",
-            "payments",
             "donations_count",
             "successful_donations_count",
         )
-        fields = (
+        fields: tuple[str, ...] = (
             "id",
             "title",
             "description",
@@ -44,7 +48,6 @@ class CollectSerializer(serializers.ModelSerializer):
             "created_by",
             "created_at",
             "updated_at",
-            "payments",
             "cover",
             "cover_url",
             "donations_count",
@@ -68,3 +71,18 @@ class CollectSerializer(serializers.ModelSerializer):
                     {"end_date": "end_date must be after start_date."}
                 )
         return data
+
+
+class CollectDetailSerializer(CollectListSerializer):
+    payments = serializers.SerializerMethodField(read_only=True)
+
+    class Meta(CollectListSerializer.Meta):
+        fields = CollectListSerializer.Meta.fields + ("payments",)
+
+    def get_payments(self, obj: Collect) -> list[dict[str, Any]]:
+        # Single bounded query with LIMIT; sliced Prefetch is not an option
+        # (Django rejects filtering a sliced prefetch queryset).
+        recent = obj.payments.select_related("payer")[:_RECENT_PAYMENTS_LIMIT]
+        return PaymentListSerializer(
+            recent, many=True, context=self.context
+        ).data

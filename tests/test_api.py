@@ -142,6 +142,52 @@ class TestCollectAPI:
         item = next(obj for obj in items if obj["id"] == collect.id)
         assert item["donors_count"] == 2
 
+    def test_list_query_count_does_not_grow_with_payments(
+        self,
+        auth_client,
+        collect_factory,
+        payment_factory,
+        django_assert_num_queries,
+    ):
+        for _ in range(3):
+            payment_factory.create_batch(5, collect=collect_factory())
+
+        cache.clear()
+        url = reverse("v1:collect-list")
+        # Pagination COUNT + annotated collects; payments are not fetched
+        # for the list action at all.
+        with django_assert_num_queries(2):
+            response = auth_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_list_response_has_no_payments_key(
+        self, auth_client, collect_factory, payment_factory
+    ):
+        payment_factory(collect=collect_factory())
+
+        cache.clear()
+        url = reverse("v1:collect-list")
+        response = auth_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        items = response.data.get("results", response.data)
+        assert items
+        assert all("payments" not in item for item in items)
+
+    def test_detail_payments_feed_is_limited(
+        self, auth_client, collect_factory, payment_factory
+    ):
+        collect = collect_factory()
+        payment_factory.create_batch(12, collect=collect)
+
+        cache.clear()
+        url = reverse("v1:collect-detail", kwargs={"id": collect.id})
+        response = auth_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data["payments"]) == 10
+
 
 @pytest.mark.django_db
 class TestPaymentAPI:

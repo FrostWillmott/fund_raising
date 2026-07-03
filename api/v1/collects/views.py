@@ -9,10 +9,14 @@ from rest_framework import exceptions, permissions, viewsets
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.serializers import BaseSerializer
 
 from api.pagination import ResultsSetPagination
 from api.permissions import IsCollectAuthorOrReadOnly
-from api.v1.collects.serializers import CollectSerializer
+from api.v1.collects.serializers import (
+    CollectDetailSerializer,
+    CollectListSerializer,
+)
 from collects.models import Collect
 from collects.tasks import send_donation_email
 
@@ -20,7 +24,7 @@ _CACHE_TTL = 60
 
 
 class CollectViewSet(viewsets.ModelViewSet):
-    serializer_class = CollectSerializer
+    serializer_class = CollectDetailSerializer
     permission_classes = (
         permissions.IsAuthenticated,
         IsCollectAuthorOrReadOnly,
@@ -32,10 +36,14 @@ class CollectViewSet(viewsets.ModelViewSet):
     lookup_field = "id"
     pagination_class = ResultsSetPagination
 
+    def get_serializer_class(self) -> type[BaseSerializer]:
+        if self.action == "list":
+            return CollectListSerializer
+        return CollectDetailSerializer
+
     def get_queryset(self) -> QuerySet[Collect]:
         return (
             Collect.objects.select_related("created_by")
-            .prefetch_related("payments")
             .annotate(
                 donations_count=models.Count("payments"),
                 successful_donations_count=models.Count(
