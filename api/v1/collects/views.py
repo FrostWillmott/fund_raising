@@ -1,6 +1,5 @@
 from typing import Any
 
-from django.core.cache import cache
 from django.db import models, transaction
 from django.db.models import QuerySet
 from django.utils.decorators import method_decorator
@@ -11,6 +10,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 
+from api.cache import invalidate_cache
 from api.pagination import ResultsSetPagination
 from api.permissions import IsCollectAuthorOrReadOnly
 from api.v1.collects.serializers import (
@@ -66,12 +66,12 @@ class CollectViewSet(viewsets.ModelViewSet):
                     email=author.email,
                 )
             )
-        transaction.on_commit(lambda: cache.delete_pattern("*collects*"))  # type: ignore[attr-defined]
+        transaction.on_commit(lambda: invalidate_cache("collects"))
 
     @transaction.atomic
     def perform_update(self, serializer) -> None:
         serializer.save()
-        transaction.on_commit(lambda: cache.delete_pattern("*collects*"))  # type: ignore[attr-defined]
+        transaction.on_commit(lambda: invalidate_cache("collects"))
 
     @transaction.atomic
     def perform_destroy(self, instance) -> None:
@@ -83,13 +83,15 @@ class CollectViewSet(viewsets.ModelViewSet):
             )
 
         instance.delete()
-        transaction.on_commit(lambda: cache.delete_pattern("*collects*"))  # type: ignore[attr-defined]
+        transaction.on_commit(lambda: invalidate_cache("collects"))
 
-    @method_decorator(cache_page(_CACHE_TTL))
+    # key_prefix lands in the cache key verbatim (the URL part is MD5-hashed),
+    # so invalidate_cache("collects") can actually match these entries.
+    @method_decorator(cache_page(_CACHE_TTL, key_prefix="collects"))
     def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return super().list(request, *args, **kwargs)
 
-    @method_decorator(cache_page(_CACHE_TTL))
+    @method_decorator(cache_page(_CACHE_TTL, key_prefix="collects"))
     def retrieve(
         self, request: Request, *args: Any, **kwargs: Any
     ) -> Response:

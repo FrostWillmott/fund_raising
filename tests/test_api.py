@@ -6,8 +6,10 @@ from io import BytesIO
 import pytest
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import RequestFactory
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.cache import get_cache_key
 from PIL import Image
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -133,7 +135,6 @@ class TestCollectAPI:
             collect=collect, payer=second_donor, status="completed"
         )
 
-        cache.clear()
         url = reverse("v1:collect-list")
         response = auth_client.get(url)
 
@@ -141,6 +142,35 @@ class TestCollectAPI:
         items = response.data.get("results", response.data)
         item = next(obj for obj in items if obj["id"] == collect.id)
         assert item["donors_count"] == 2
+
+    def test_created_collect_appears_in_list_immediately(
+        self, auth_client, django_capture_on_commit_callbacks
+    ):
+        url = reverse("v1:collect-list")
+        warm_response = auth_client.get(url)
+        assert warm_response.status_code == status.HTTP_200_OK
+
+        with django_capture_on_commit_callbacks(execute=True):
+            create_response = auth_client.post(
+                url, {"title": "Fresh Fund", "occasion": "birthday"}
+            )
+        assert create_response.status_code == status.HTTP_201_CREATED
+
+        response = auth_client.get(url)
+        items = response.data.get("results", response.data)
+        assert any(item["title"] == "Fresh Fund" for item in items)
+
+    def test_cache_key_contains_collects_prefix(self, auth_client):
+        """Guard the key_prefix wiring: delete_pattern("*collects*") can only
+        match keys that literally contain "collects" (the URL part is MD5-hashed).
+        """
+        url = reverse("v1:collect-list")
+        assert auth_client.get(url).status_code == status.HTTP_200_OK
+
+        request = RequestFactory().get(url)
+        key = get_cache_key(request, key_prefix="collects", method="GET")
+        assert key is not None
+        assert "collects" in key
 
     def test_list_query_count_does_not_grow_with_payments(
         self,

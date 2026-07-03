@@ -131,9 +131,15 @@ CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": os.getenv("REDIS_CACHE_URL", "redis://redis:6379/1"),
-        "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            # A Redis outage must degrade to "no cache", not to 500s on
+            # every cached read.
+            "IGNORE_EXCEPTIONS": True,
+        },
     }
 }
+DJANGO_REDIS_LOG_IGNORED_EXCEPTIONS = True
 
 CELERY_BEAT_SCHEDULE = {
     "deactivate-expired-collects": {

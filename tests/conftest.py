@@ -1,20 +1,17 @@
 from unittest.mock import patch
 
 import pytest
+from django.core.cache import cache
 from rest_framework.test import APIClient
 
 from tests.factories import CollectFactory, PaymentFactory, UserFactory
 
 
 @pytest.fixture(autouse=True)
-def mock_cache_delete_pattern():
-    """LocMemCache doesn't have delete_pattern — mock it globally for all tests."""
-    with patch(
-        "django.core.cache.cache.delete_pattern",
-        create=True,
-        return_value=None,
-    ):
-        yield
+def isolate_cache():
+    """LocMemCache persists across tests in-process — start each test cold."""
+    cache.clear()
+    yield
 
 
 @pytest.fixture(autouse=True)

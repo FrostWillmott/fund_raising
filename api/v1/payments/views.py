@@ -1,10 +1,10 @@
-from django.core.cache import cache
 from django.db import IntegrityError, transaction
 from django.db.models import QuerySet
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from rest_framework import exceptions, permissions, viewsets
 
+from api.cache import invalidate_cache
 from api.pagination import ResultsSetPagination
 from api.permissions import IsPaymentPayerOrReadOnly
 from api.v1.payments.serializers import PaymentSerializer
@@ -49,13 +49,12 @@ class PaymentViewSet(viewsets.ModelViewSet):
                     email=payment.payer.email,
                 )
             )
-        transaction.on_commit(lambda: cache.delete_pattern("*collects*"))  # type: ignore[attr-defined]
-        transaction.on_commit(lambda: cache.delete_pattern("*payments*"))  # type: ignore[attr-defined]
+        transaction.on_commit(lambda: invalidate_cache("collects", "payments"))
 
-    @method_decorator(cache_page(_CACHE_TTL))
+    @method_decorator(cache_page(_CACHE_TTL, key_prefix="payments"))
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
-    @method_decorator(cache_page(_CACHE_TTL))
+    @method_decorator(cache_page(_CACHE_TTL, key_prefix="payments"))
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
