@@ -25,14 +25,29 @@ permissions, query optimization, and maintainable environment-based settings.
 **Features:**
 - JWT authentication via djoser + simplejwt (not mentioned in the spec)
 - Separate dev/prod settings with environment-specific email, DB, and debug config
+- Service layer (`collects/services.py`, `payments/services.py`): creation
+  lifecycle — transaction, forced payment status, atomic `collected_amount`
+  increment via `F()` expressions, post-commit email and cache invalidation —
+  lives in one place per domain
+- Domain validation where money moves: positive amounts only, no donations
+  to inactive or expired collects, `end_date` must be after `start_date`
+- Race-safe `transaction_id` uniqueness: serializer check for a clear error
+  message, plus `IntegrityError` → 400 for concurrent duplicates
+- Collect list/detail responses cached for 60 s with working invalidation:
+  `cache_page(key_prefix=...)` puts a matchable literal into the cache key,
+  `delete_pattern` removes it on every write; a Redis outage degrades to
+  uncached responses instead of 500s (`IGNORE_EXCEPTIONS`)
+- Payments are private to the payer: list/retrieve are payer-scoped and not
+  shared-cached
+- A collect with payment history cannot be deleted — friendly 400 at the API
+  layer, `on_delete=PROTECT` as the DB-level backstop
+- Celery email tasks with bounded retries (`autoretry_for` + exponential
+  backoff, max 3 attempts); a broker outage after commit is logged, not
+  turned into a 500
 - Cover image processing: auto-resize to 1200×800, JPEG optimization, format
   validation, 2MB size limit, auto-cleanup of old files on update
 - Custom permission classes with inheritance (`IsOwnerOrReadOnly` →
   `IsCollectAuthorOrReadOnly`, `IsPaymentPayerOrReadOnly`)
-- `transaction.atomic` on payment creation with atomic `collected_amount`
-  update via `F()` expressions
-- Guard against deleting a collection that already has payments
-- `transaction_id` uniqueness validation with a clear error message
 - DB index on `(collect, status)` for payment queries
 - Pagination with configurable `page_size`
 - Realistic seed data: Faker with `ru_RU` locale, occasion-specific title/
@@ -85,13 +100,13 @@ POST   /auth/users/                  — register
 POST   /auth/jwt/create/             — get token
 POST   /auth/jwt/refresh/            — refresh token
 
-GET    /api/v1/collects/             — list collections
+GET    /api/v1/collects/             — list collections (no payment feed)
 POST   /api/v1/collects/             — create collection (with cover image)
-GET    /api/v1/collects/{id}/        — collection detail with payment feed
+GET    /api/v1/collects/{id}/        — collection detail with the 10 most recent payments
 PATCH  /api/v1/collects/{id}/        — update (owner only)
 DELETE /api/v1/collects/{id}/        — delete (owner only, no payments)
 
-GET    /api/v1/payments/             — list payments
+GET    /api/v1/payments/             — list your own payments
 POST   /api/v1/payments/             — make a donation
 ```
 
@@ -112,12 +127,12 @@ payments with weighted amount distribution (50% small / 30% medium /
 ```
 fund_raising/
 ├── api/v1/
-│   ├── collects/     # ViewSet, serializer, cache invalidation
-│   └── payments/     # ViewSet, serializer, atomic updates
-├── collects/         # Model, signals, image utils, tasks
-├── payments/         # Model, tasks
+│   ├── collects/     # ViewSet (cached, list/detail serializer split)
+│   └── payments/     # ViewSet (payer-scoped), serializers
+├── collects/         # Model, services, signals, image utils, tasks
+├── payments/         # Model, services, tasks
 ├── dev_tools/        # generate_test_data management command
-└── fund_raising/     # Settings (base / development / production)
+└── fund_raising/     # Settings (base / development / production), cache helper
 ```
 
 ## Development
@@ -136,9 +151,19 @@ poetry run pre-commit run --all-files
 ```
 ## Tests
 
-API tests cover core scenarios: listing and creating collections, permission
-enforcement, payment creation with atomic `collected_amount` update,
-duplicate `transaction_id` rejection, and delete guards.
+32 tests across the API and service layers:
+- collection listing/creation, including cache freshness (a created collect
+  appears in the list immediately) and a cache-key regression guard
+- permission and visibility enforcement: owner-only writes, payer-scoped
+  payment access (list and retrieve)
+- domain validation: negative/zero amounts, donations to inactive or expired
+  collects, `end_date` in the past, null/missing collect
+- duplicate `transaction_id` rejection and delete guards (API 400 + DB PROTECT)
+- query-count regression for the collect list (constant, independent of the
+  number of payments) and the bounded detail feed
+- cover image pipeline: size/format validation, resize, JPEG re-encoding
+- payment service unit tests: counter increment, failed duplicate leaves the
+  counter intact, direct ORM writes don't touch the counter
 
 ```bash
 # Run with coverage (outputs term-missing summary + htmlcov/)
