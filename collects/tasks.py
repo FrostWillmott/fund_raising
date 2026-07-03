@@ -42,7 +42,7 @@ def process_cover_image_task(collect_id: int) -> None:
         return
 
     process_cover_image(collect)
-    collect.save(update_fields=["cover"])
+    collect.save(update_fields=["cover", "updated_at"])
     # The cover URL changed (new filename/format); cached collect pages
     # still hold the old URL and must be invalidated again.
     invalidate_cache("collects")

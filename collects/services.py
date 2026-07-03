@@ -46,7 +46,7 @@ def create_collect(*, created_by: User, **validated_data: Any) -> Collect:
             )
         if created_by and created_by.email:
             author_email = created_by.email
-            goal_amount = str(collect.goal_amount)
+            goal_amount = str(collect.goal_amount or "open-ended")
             title = collect.title
             transaction.on_commit(
                 lambda: _enqueue_collect_email(
