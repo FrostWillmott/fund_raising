@@ -1,5 +1,3 @@
-from unittest.mock import patch
-
 import pytest
 from django.core.cache import cache
 from rest_framework.test import APIClient
@@ -12,20 +10,6 @@ def isolate_cache():
     """LocMemCache persists across tests in-process — start each test cold."""
     cache.clear()
     yield
-
-
-@pytest.fixture(autouse=True)
-def mock_celery_tasks_delay():
-    """Avoid running Celery tasks during tests and silence Celery eager deprecation.
-
-    Celery 5 deprecates `CELERY_TASK_ALWAYS_EAGER`. Instead of configuring eager mode,
-    we patch `.delay` on our tasks to be no-ops.
-    """
-    with (
-        patch("collects.tasks.send_donation_email.delay", return_value=None),
-        patch("payments.tasks.send_payment_email.delay", return_value=None),
-    ):
-        yield
 
 
 @pytest.fixture

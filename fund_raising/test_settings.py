@@ -30,3 +30,11 @@ CACHES = {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
     }
 }
+
+# Run Celery tasks synchronously during tests so side-effects (cover image
+# processing, email) are observable without a live broker.
+CELERY_TASK_ALWAYS_EAGER = True
+
+# Console backend writes email bodies to stdout instead of connecting to
+# MailHog, so email tasks can run eagerly in tests without external services.
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"

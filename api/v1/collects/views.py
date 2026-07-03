@@ -18,6 +18,7 @@ from api.v1.collects.serializers import (
 )
 from collects.models import Collect
 from collects.services import create_collect
+from collects.tasks import process_cover_image_task
 from fund_raising.cache import invalidate_cache
 
 _CACHE_TTL = 60
@@ -61,7 +62,13 @@ class CollectViewSet(viewsets.ModelViewSet):
 
     @transaction.atomic
     def perform_update(self, serializer) -> None:
+        instance = serializer.instance
+        cover_changed = "cover" in serializer.validated_data
         serializer.save()
+        if cover_changed and instance.cover:
+            transaction.on_commit(
+                lambda: process_cover_image_task.delay(instance.id)
+            )
         transaction.on_commit(lambda: invalidate_cache("collects"))
 
     @transaction.atomic

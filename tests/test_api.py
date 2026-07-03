@@ -388,7 +388,9 @@ class TestCoverImage:
         response = auth_client.post(url, data, format="multipart")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_png_cover_stored_as_jpg(self, auth_client):
+    def test_png_cover_stored_as_jpg(
+        self, auth_client, django_capture_on_commit_callbacks
+    ):
         url = reverse("v1:collect-list")
         cover = _make_image(100, 100, mode="RGB", fmt="PNG")
         data = {
@@ -396,11 +398,18 @@ class TestCoverImage:
             "occasion": "other",
             "cover": cover,
         }
-        response = auth_client.post(url, data, format="multipart")
+        with django_capture_on_commit_callbacks(execute=True):
+            response = auth_client.post(url, data, format="multipart")
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["cover_url"].endswith(".jpg")
+        # The cover was processed by the Celery task (eager in tests);
+        # the response URL reflects the name at save time, but the file
+        # on disk has been converted to JPEG.
+        collect = Collect.objects.get(id=response.data["id"])
+        assert collect.cover.name.endswith(".jpg")
 
-    def test_oversized_image_is_resized(self, auth_client):
+    def test_oversized_image_is_resized(
+        self, auth_client, django_capture_on_commit_callbacks
+    ):
         url = reverse("v1:collect-list")
         cover = _make_image(2000, 1500, fmt="JPEG")
         data = {
@@ -408,14 +417,17 @@ class TestCoverImage:
             "occasion": "other",
             "cover": cover,
         }
-        response = auth_client.post(url, data, format="multipart")
+        with django_capture_on_commit_callbacks(execute=True):
+            response = auth_client.post(url, data, format="multipart")
         assert response.status_code == status.HTTP_201_CREATED
         collect = Collect.objects.get(id=response.data["id"])
         img = Image.open(collect.cover)
         assert img.width <= 1200
         assert img.height <= 800
 
-    def test_rgba_png_cover_stored_as_jpg(self, auth_client):
+    def test_rgba_png_cover_stored_as_jpg(
+        self, auth_client, django_capture_on_commit_callbacks
+    ):
         url = reverse("v1:collect-list")
         cover = _make_image(100, 100, mode="RGBA", fmt="PNG")
         data = {
@@ -423,6 +435,8 @@ class TestCoverImage:
             "occasion": "other",
             "cover": cover,
         }
-        response = auth_client.post(url, data, format="multipart")
+        with django_capture_on_commit_callbacks(execute=True):
+            response = auth_client.post(url, data, format="multipart")
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["cover_url"].endswith(".jpg")
+        collect = Collect.objects.get(id=response.data["id"])
+        assert collect.cover.name.endswith(".jpg")
