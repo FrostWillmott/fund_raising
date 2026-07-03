@@ -18,7 +18,7 @@ from api.v1.collects.serializers import (
     CollectListSerializer,
 )
 from collects.models import Collect
-from collects.tasks import send_donation_email
+from collects.services import create_collect
 
 _CACHE_TTL = 60
 
@@ -54,19 +54,10 @@ class CollectViewSet(viewsets.ModelViewSet):
             .order_by("-created_at")
         )
 
-    @transaction.atomic
     def perform_create(self, serializer) -> None:
-        collect = serializer.save(created_by=self.request.user)
-        author = collect.created_by
-        if author and author.email:
-            transaction.on_commit(
-                lambda: send_donation_email.delay(
-                    amount=str(collect.goal_amount),
-                    title=collect.title,
-                    email=author.email,
-                )
-            )
-        transaction.on_commit(lambda: invalidate_cache("collects"))
+        serializer.instance = create_collect(
+            created_by=self.request.user, **serializer.validated_data
+        )
 
     @transaction.atomic
     def perform_update(self, serializer) -> None:

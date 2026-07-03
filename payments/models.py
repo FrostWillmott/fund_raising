@@ -3,7 +3,6 @@ from decimal import Decimal
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
-from django.db.models import F
 
 from collects.models import Collect
 
@@ -14,9 +13,11 @@ class Payment(models.Model):
         COMPLETED = "completed", "Completed"
         FAILED = "failed", "Failed"
 
+    # PROTECT backs up the view-level guard: a collect with payment history
+    # must not be deletable from the admin or shell either.
     collect = models.ForeignKey(
         Collect,
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         related_name="payments",
         verbose_name="Collect",
         null=True,
@@ -42,15 +43,6 @@ class Payment(models.Model):
     )
     payment_date = models.DateTimeField(auto_now_add=True)
     metadata = models.JSONField(blank=True, null=True)
-
-    def save(self, *args, **kwargs):
-        creating = self._state.adding
-        super().save(*args, **kwargs)
-
-        if creating and self.status == self.Status.COMPLETED:
-            Collect.objects.filter(pk=self.collect_id).update(
-                collected_amount=F("collected_amount") + self.amount
-            )
 
     def __str__(self):
         title = self.collect.title if self.collect else "—"
