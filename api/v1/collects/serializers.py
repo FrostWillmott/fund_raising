@@ -1,5 +1,6 @@
 from typing import Any
 
+from django.core.validators import FileExtensionValidator
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -14,7 +15,12 @@ _RECENT_PAYMENTS_LIMIT = 10
 
 class CollectListSerializer(serializers.ModelSerializer):
     cover = serializers.ImageField(
-        write_only=True, required=False, validators=[validate_file_size]
+        write_only=True,
+        required=False,
+        validators=[
+            FileExtensionValidator(["jpg", "jpeg", "png", "webp"]),
+            validate_file_size,
+        ],
     )
     cover_url = serializers.SerializerMethodField(read_only=True)
 

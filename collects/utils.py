@@ -16,7 +16,7 @@ def process_cover_image(instance: Any) -> None:
     if img.width > 1200 or img.height > 800:
         img.thumbnail((1200, 800), Image.Resampling.LANCZOS)
 
-    if img.mode in ("RGBA", "P"):
+    if img.mode in ("RGBA", "LA", "P"):
         img = img.convert("RGB")
 
     buffer = BytesIO()

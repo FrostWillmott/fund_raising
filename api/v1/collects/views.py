@@ -2,6 +2,7 @@ from typing import Any
 
 from django.db import models, transaction
 from django.db.models import QuerySet
+from django.utils.cache import patch_cache_control
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from rest_framework import exceptions, permissions, viewsets
@@ -20,6 +21,7 @@ from collects.models import Collect
 from collects.services import create_collect
 from collects.tasks import process_cover_image_task
 from fund_raising.cache import invalidate_cache
+from fund_raising.utils import safe_enqueue_task
 
 _CACHE_TTL = 60
 
@@ -67,7 +69,11 @@ class CollectViewSet(viewsets.ModelViewSet):
         if cover_changed and serializer.instance.cover:
             instance_id = serializer.instance.id
             transaction.on_commit(
-                lambda: process_cover_image_task.delay(instance_id)
+                lambda: safe_enqueue_task(
+                    process_cover_image_task.delay,
+                    f"cover-processing:{instance_id}",
+                    instance_id,
+                )
             )
         transaction.on_commit(lambda: invalidate_cache("collects"))
 
@@ -94,3 +100,23 @@ class CollectViewSet(viewsets.ModelViewSet):
         self, request: Request, *args: Any, **kwargs: Any
     ) -> Response:
         return super().retrieve(request, *args, **kwargs)
+
+    def dispatch(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> Response:
+        response = super().dispatch(request, *args, **kwargs)
+        # Mark cached responses as private so intermediate proxies don't store
+        # authenticated responses.  Must run *after* the page is rendered,
+        # because cache_page defers its own process_response via Django's
+        # add_post_render_callback (DRF Response has a .render() method).  If
+        # "private" is added before rendering, cache_page's middleware sees it
+        # and skips caching entirely.
+        if request.method in ("GET", "HEAD") and hasattr(
+            response, "add_post_render_callback"
+        ):
+            response.add_post_render_callback(
+                lambda r: patch_cache_control(r, private=True)
+            )
+        elif request.method in ("GET", "HEAD"):
+            patch_cache_control(response, private=True)
+        return response

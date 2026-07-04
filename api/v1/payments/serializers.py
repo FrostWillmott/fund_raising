@@ -57,6 +57,8 @@ class PaymentListSerializer(serializers.ModelSerializer):
         fields = ("amount", "payment_date", "donor_name")
 
     def get_donor_name(self, obj):
+        if obj.metadata and obj.metadata.get("is_anonymous"):
+            return "Anonymous"
         if obj.payer:
             full_name = f"{obj.payer.first_name} {obj.payer.last_name}".strip()
             return full_name or obj.payer.username

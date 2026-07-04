@@ -1,6 +1,5 @@
 # dev_tools/management/commands/generate_test_data.py
 
-import logging
 import random
 from datetime import timedelta
 from decimal import Decimal
@@ -17,7 +16,6 @@ from payments.models import Payment
 
 User = get_user_model()
 fake = Faker(["ru_RU", "en_US"])
-logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -323,24 +321,26 @@ class Command(BaseCommand):
                 if random.random() > 0.9:
                     metadata["is_anonymous"] = True
 
-                try:
-                    payment = Payment(
-                        collect_id=collect.id,
-                        payer_id=user.id,
-                        amount=amount,
-                        transaction_id=transaction_id,
-                        status=status,
-                        payment_date=payment_date,
-                        metadata=metadata,
-                    )
-                    payments_to_create.append(payment)
-                except (ValueError, models.IntegrityError) as e:
-                    logger.error(
-                        f"Error creating payment object: {e}", exc_info=True
-                    )
-                    continue
+                payment = Payment(
+                    collect_id=collect.id,
+                    payer_id=user.id,
+                    amount=amount,
+                    transaction_id=transaction_id,
+                    status=status,
+                    payment_date=payment_date,
+                    metadata=metadata,
+                )
+                payments_to_create.append(payment)
 
-            Payment.objects.bulk_create(payments_to_create, batch_size=500)
+            # Temporarily disable auto_now_add so the carefully
+            # generated historical payment_date values survive bulk_create.
+            payment_date_field = Payment._meta.get_field("payment_date")
+            original_auto_now_add = payment_date_field.auto_now_add
+            payment_date_field.auto_now_add = False
+            try:
+                Payment.objects.bulk_create(payments_to_create, batch_size=500)
+            finally:
+                payment_date_field.auto_now_add = original_auto_now_add
 
             if Payment.Status.COMPLETED in payment_statuses:
                 completed_payments = [
@@ -362,7 +362,7 @@ class Command(BaseCommand):
                         collected_amount=models.F("collected_amount") + amount
                     )
 
-            payments_created += batch_amount
+            payments_created += len(payments_to_create)
             self.stdout.write(
                 f"  Created {payments_created} of {num_payments} payments..."
             )

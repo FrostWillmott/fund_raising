@@ -1,5 +1,5 @@
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
-from rest_framework.exceptions import ValidationError
 
 
 def validate_file_size(value: UploadedFile) -> UploadedFile:

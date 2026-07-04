@@ -9,7 +9,7 @@ from django.core.mail import send_mail
     retry_backoff=True,
     retry_kwargs={"max_retries": 3},
 )
-def send_donation_email(amount: str, title: str, email: str) -> None:
+def send_collect_created_email(amount: str, title: str, email: str) -> None:
     send_mail(
         subject="Collect created",
         message=f'You have created a fundraise "{title}" with a goal of {amount}. Good luck!',
@@ -28,20 +28,31 @@ def process_cover_image_task(collect_id: int) -> None:
 
     Runs asynchronously so the HTTP request cycle never blocks on Pillow.
     Retries on filesystem errors (OSError) with exponential backoff.
+    ``PIL.UnidentifiedImageError`` (a subclass of ``OSError``) is caught
+    explicitly — retrying a corrupt file is pointless.
     """
+    from PIL import UnidentifiedImageError
+
     from collects.models import Collect
     from collects.utils import process_cover_image
     from fund_raising.cache import invalidate_cache
 
+    # Lock the row so a concurrent cover upload during processing doesn't get
+    # overwritten by the processed version of the old image.
     try:
-        collect = Collect.objects.get(pk=collect_id)
+        collect = Collect.objects.select_for_update().get(pk=collect_id)
     except Collect.DoesNotExist:
         return
 
     if not collect.cover:
         return
 
-    process_cover_image(collect)
+    try:
+        process_cover_image(collect)
+    except UnidentifiedImageError:
+        # Corrupt file — retrying won't help.
+        return
+
     collect.save(update_fields=["cover", "updated_at"])
     # The cover URL changed (new filename/format); cached collect pages
     # still hold the old URL and must be invalidated again.

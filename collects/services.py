@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.db import transaction
 
 from collects.models import Collect
-from collects.tasks import process_cover_image_task, send_donation_email
+from collects.tasks import process_cover_image_task, send_collect_created_email
 from fund_raising.cache import invalidate_cache
 from fund_raising.utils import safe_enqueue_task
 
@@ -34,7 +34,7 @@ def create_collect(*, created_by: User, **validated_data: Any) -> Collect:
             title = collect.title
             transaction.on_commit(
                 lambda: safe_enqueue_task(
-                    send_donation_email.delay,
+                    send_collect_created_email.delay,
                     f"collect-email:{author_email}",
                     amount=goal_amount,
                     title=title,
