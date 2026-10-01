@@ -151,7 +151,7 @@ poetry run pre-commit run --all-files
 ```
 ## Tests
 
-32 tests across the API and service layers:
+Tests cover the API, service and task layers:
 - collection listing/creation, including cache freshness (a created collect
   appears in the list immediately) and a cache-key regression guard
 - permission and visibility enforcement: owner-only writes, payer-scoped
@@ -164,6 +164,9 @@ poetry run pre-commit run --all-files
 - cover image pipeline: size/format validation, resize, JPEG re-encoding
 - payment service unit tests: counter increment, failed duplicate leaves the
   counter intact, direct ORM writes don't touch the counter
+- Celery tasks: expired-collect deactivation touches only expired active
+  collects; cover processing resizes and re-encodes, no-ops on a missing
+  collect or cover
 
 ```bash
 # Run with coverage (outputs term-missing summary + htmlcov/)
