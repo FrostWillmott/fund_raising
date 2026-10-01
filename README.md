@@ -1,5 +1,5 @@
 <div align="center">
-  <img src=".github/banner.svg" alt="Group Fundraising Service" width="100%"/>
+  <img src=".github/banner.png" alt="Group Fundraising Service" width="100%"/>
 </div>
 
 # Group Fundraising Service
