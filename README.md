@@ -6,14 +6,14 @@
 
 [![CI](https://github.com/FrostWillmott/fund_raising/actions/workflows/ci.yml/badge.svg)](https://github.com/FrostWillmott/fund_raising/actions/workflows/ci.yml)
 [![Coverage](https://raw.githubusercontent.com/FrostWillmott/fund_raising/main/.github/badges/coverage.svg)](https://github.com/FrostWillmott/fund_raising/actions/workflows/ci.yml)
-[![Python](https://img.shields.io/badge/python-3.12-blue?logo=python&logoColor=white)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-3.13-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![Django](https://img.shields.io/badge/django-5.2-092E20?logo=django&logoColor=white)](https://www.djangoproject.com/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Docker](https://img.shields.io/badge/docker-ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 
-A production-ready REST API for group fundraising with JWT authentication,
+A test assignment (2025), reworked 2026: a REST API for group fundraising with JWT authentication,
 image processing, cache invalidation, and asynchronous email notifications.
 The project focuses on practical backend concerns: transactional safety,
 permissions, query optimization, and maintainable environment-based settings.
@@ -46,8 +46,6 @@ permissions, query optimization, and maintainable environment-based settings.
   turned into a 500
 - Cover image processing: auto-resize to 1200×800, JPEG optimization, format
   validation, 2MB size limit, auto-cleanup of old files on update
-- Custom permission classes with inheritance (`IsOwnerOrReadOnly` →
-  `IsCollectAuthorOrReadOnly`, `IsPaymentPayerOrReadOnly`)
 - DB index on `(collect, status)` for payment queries
 - Pagination with configurable `page_size`
 - Realistic seed data: Faker with `ru_RU` locale, occasion-specific title/
