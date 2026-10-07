@@ -2,9 +2,12 @@
 .cache
 .ash_history
 .coverage
+.env*
 .vscode
 .idea
 htmlcov
+media/
+*.sqlite3
 venv
 __pycache__
 backup
