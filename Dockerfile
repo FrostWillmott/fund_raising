@@ -18,7 +18,8 @@ FROM python:3.13.13-slim AS runtime
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends default-libmysqlclient-dev \
- && rm -rf /var/lib/apt/lists/*
+ && rm -rf /var/lib/apt/lists/* \
+ && useradd --create-home --uid 1000 appuser
 
 WORKDIR /app
 
@@ -26,7 +27,12 @@ COPY --from=builder /app/.venv /app/.venv
 
 ENV PATH="/app/.venv/bin:$PATH"
 
-COPY . /app/
+COPY --chown=appuser:appuser . /app/
+
+RUN mkdir -p /app/media /app/static \
+ && chown appuser:appuser /app/media /app/static
+
+USER appuser
 
 ENV PYTHONUNBUFFERED=1
 ENV DJANGO_ENV=development
