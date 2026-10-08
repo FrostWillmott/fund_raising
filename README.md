@@ -18,6 +18,10 @@ image processing, cache invalidation, and asynchronous email notifications.
 The project focuses on practical backend concerns: transactional safety,
 permissions, query optimization, and maintainable environment-based settings.
 
+**How this was built.** The original spec is the test assignment; the 2026 rework plan, design decisions
+and acceptance criteria are mine; implementation with Claude Code, every change reviewed by hand before commit.
+The agent configuration lives in [developer-os](https://github.com/FrostWillmott/developer-os).
+
 ## What's inside
 
 **Core stack:** Django 5.2, Django REST Framework, MySQL, Redis, Celery
